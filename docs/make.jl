@@ -4,11 +4,11 @@ using Documenter
 makedocs(;
     modules=[PhotometricFilters],
     authors="Miles Lucas <mdlucas@hawaii.edu> and contributors",
-    repo="https://github.com/mileslucas/PhotometricFilters.jl/blob/{commit}{path}#L{line}",
+    repo="https://github.com/juliaastro/PhotometricFilters.jl/blob/{commit}{path}#L{line}",
     sitename="PhotometricFilters.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://mileslucas.github.io/PhotometricFilters.jl",
+        canonical="https://juliaastro.github.io/PhotometricFilters.jl",
         assets=String[],
     ),
     pages=[
@@ -17,5 +17,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/mileslucas/PhotometricFilters.jl",
+    repo="github.com/juliaastro/PhotometricFilters.jl",
 )
