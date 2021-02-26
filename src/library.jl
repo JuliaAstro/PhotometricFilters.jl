@@ -1,4 +1,5 @@
 using HDF5
+using Unitful
 
 const PYPHOT_DATADEP = DataDep(
     "filters",
@@ -7,18 +8,35 @@ const PYPHOT_DATADEP = DataDep(
     "9078486ec989bc0ffddb60f9cda686dff887c5d69627bc4703fd41d78a9e7d46";
 )
 
-function read_filter(name::AbstractString)
+function read_filter(name::AbstractString, unit=true)
     local wave, through, dtype, fname
     h5open(datadep"filters/new_filters.hd5") do fh
         node = fh["filters/$name"]
         data = read(node)
         wave = map(i -> i.WAVELENGTH, data)
+        if unit
+            unitstr = read(attributes(node)["WAVELENGTH_UNIT"])
+            wave *= parse_unit(unitstr)
+        end
         through = map(i -> i.THROUGHPUT, data)
         dtype = read(attributes(node)["DETECTOR"])
         fname = read(attributes(node)["NAME"])
     end
     D = parse(DetectorType, dtype)
     return PhotometricFilter(wave, through, D, fname)
+end
+
+function parse_unit(unitstr::AbstractString)
+    tok = lowercase(unitstr)
+    if tok === "angstrom" || tok === "aa"
+        return u"angstrom"
+    elseif tok === "nm" || tok === "nanometer"
+        return u"nm"
+    elseif tok === "um"
+        return u"μm"
+    else
+        throw(ArgumentError("Could not parse Unitful unit from $unitstr"))
+    end
 end
 
 ###
@@ -295,5 +313,5 @@ const FILTER_NAMES = [
 
 for filter_name in FILTER_NAMES
     F = Symbol(filter_name)
-    @eval $F() = read_filter($filter_name)
+    @eval $F(; unit=false) = read_filter($filter_name, unit)
 end
