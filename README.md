@@ -18,15 +18,13 @@ using PhotometricFilters
 using PhotometricFilters: SDSS_u, SDSS_g, SDSS_r, SDSS_i, SDSS_z
 
 filts = [SDSS_u(), SDSS_g(), SDSS_r(), SDSS_i(), SDSS_z()]
-combined = sum(filts)
 ```
 
 plotting works out of the box
 
 ```julia
-using Plots
-plot(wave(combined), throughput(combined) .+ 0.1, label="")
-plot!(filts)
+using Plots, ColorSchemes
+plot(filts, palette=palette(:magma, 8))
 ```
 
 ![](sdss.png)

@@ -1,6 +1,6 @@
 using Interpolations
 
-abstract type AbstractFilter end
+abstract type AbstractFilter{T} <: AbstractVector{T} end
 
 abstract type DetectorType end
 struct Photon <: DetectorType end
@@ -17,17 +17,21 @@ function Base.parse(::Type{DetectorType}, s::AbstractString)
     end
 end
 
-struct PhotometricFilter{WLT,TT,DT<:DetectorType,ST<:Union{String,Nothing}} <: AbstractFilter
-    wave::WLT
+struct PhotometricFilter{T,WT,TT<:AbstractVector{T},DT<:DetectorType,ST<:Union{String,Nothing},ET} <: AbstractFilter{T}
+    wave::WT
     throughput::TT
     detector::DT
     name::ST
+    etp::ET
 end
 
 function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector; detector=Photon(), name=nothing)
     length(wave) == length(throughput) || error("wavelength and throughput arrays must match")
-    return PhotometricFilter(wave, throughput, detector, name)
+    etp = interpolator(wave, throughput)
+    return PhotometricFilter(wave, throughput, detector, name, etp)
 end
+
+Base.getindex(f::PhotometricFilter, idx...) = throughput(f)[idx...]
 
 Base.show(io::IO, f::PhotometricFilter) = print(io, f.name)
 
@@ -39,10 +43,6 @@ wave(f::PhotometricFilter) = f.wave
 throughput(f::PhotometricFilter) = f.throughput
 
 Base.size(f::PhotometricFilter) = size(throughput(f))
-Base.length(f::PhotometricFilter) = prod(size(f))
-
-Base.iterate(f::PhotometricFilter, args...) = iterate(wave(f), args...), iterate(throughput(f), args...)
-
 
 function central_wavelength()
 
@@ -84,29 +84,29 @@ function apply!(filt::PhotometricFilter, wave, flux, out)
     return out
 end
 
-function interpolator(filt::PhotometricFilter)
-    x = wave(filt) |> ustrip
-    y = throughput(filt)
-    bc = zero(eltype(y))
-    return LinearInterpolation(x, y; extrapolation_bc=bc)
+interpolator(filt::PhotometricFilter) = filt.etp
+
+function interpolator(wave, throughput)
+    bc = zero(eltype(throughput))
+    return LinearInterpolation(wave, throughput; extrapolation_bc=bc)
 end
 
 function fwhm(filt::PhotometricFilter)
-    y = throughput(filt)
-    Δ = diff(sign.(y ./ maximum(y) .- 0.5))
+    Δ = diff(sign.(filt ./ maximum(filt) .- 0.5))
     i1 = findfirst(!iszero, Δ)
     i2 = findnext(!iszero, Δ, i1 + 1)
     return wave(filt)[i2] - wave(filt)[i1]
 end
 
-function Base.:+(f1::PhotometricFilter, f2::PhotometricFilter)
+function Base.:*(f1::PhotometricFilter, f2::PhotometricFilter)
     # find total extent and log-spacing
     w1 = wave(f1)
     w2 = wave(f2)
     e1 = extrema(w1)
     e2 = extrema(w2)
-    min_wl = min(e1[1], e2[1])
-    max_wl = max(e1[2], e2[2])
+    min_wl = max(e1[1], e2[1])
+    max_wl = min(e1[2], e2[2])
+    max_wl ≤ min_wl && error("no overlap between the two filters")
     δwl1 = (e1[2] - e1[1]) / length(w1)
     δwl2 = (e2[2] - e2[1]) / length(w2)
     δ = min(δwl1, δwl2)
@@ -115,7 +115,7 @@ function Base.:+(f1::PhotometricFilter, f2::PhotometricFilter)
 
     etp1 = interpolator(f1)
     etp2 = interpolator(f2)
-    through = @. etp1(ustrip(wl)) + etp2(ustrip(wl))
-    name = "$(f1.name) + $(f2.name)"
-    return PhotometricFilter(wl, through, f1.detector, name)
+    through = @. etp1(ustrip(wl)) * etp2(ustrip(wl))
+    name = "$(f1.name) * $(f2.name)"
+    return PhotometricFilter(wl, through; detector=f1.detector, name=name)
 end
