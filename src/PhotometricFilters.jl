@@ -12,9 +12,10 @@ struct Photon <: DetectorType end
 struct Energy <: DetectorType end
 
 function Base.parse(::Type{DetectorType}, s::AbstractString)
-    if s == "photon"
+    tok = lowercase(s)
+    if tok === "photon"
         return Photon()
-    elseif s == "energy"
+    elseif tok === "energy"
         return Energy()
     else
         throw(ArgumentError("failed to parse DetectorType from $s"))
@@ -28,7 +29,7 @@ struct PhotometricFilter{WLT,TT,DT<:DetectorType,ST<:Union{String,Nothing}} <: A
     name::ST
 end
 
-Base.show(io::IO, f::PhotometricFilter) = print(io, "PhotometricFilter: ", f.name)
+Base.show(io::IO, f::PhotometricFilter) = print(io, f.name)
 
 function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter)
     print(io, "PhotometricFilter: $(f.name)\n wave: ", f.wave, "\n throughput: ", f.throughput)
@@ -44,6 +45,7 @@ Base.iterate(f::PhotometricFilter, args...) = iterate((f.wave, f.throughput), ar
 
 # filters
 include("library.jl")
+include("plots.jl")
 
 function __init__()
     register(PYPHOT_DATADEP)
