@@ -25,7 +25,7 @@ plotting works out of the box
 
 ```julia
 using Plots
-plot(combined, label="")
+plot(wave(combined), throughput(combined) .+ 0.1, label="")
 plot!(filts)
 ```
 
