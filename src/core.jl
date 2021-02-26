@@ -1,3 +1,4 @@
+using Interpolations
 
 abstract type AbstractFilter end
 
@@ -23,6 +24,11 @@ struct PhotometricFilter{WLT,TT,DT<:DetectorType,ST<:Union{String,Nothing}} <: A
     name::ST
 end
 
+function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector; detector=Photon(), name=nothing)
+    length(wave) == length(throughput) || error("wavelength and throughput arrays must match")
+    return PhotometricFilter(wave, throughput, detector, name)
+end
+
 Base.show(io::IO, f::PhotometricFilter) = print(io, f.name)
 
 function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter)
@@ -36,3 +42,59 @@ Base.size(f::PhotometricFilter) = size(throughput(f))
 Base.length(f::PhotometricFilter) = prod(size(f))
 
 Base.iterate(f::PhotometricFilter, args...) = iterate(wave(f), args...), iterate(throughput(f), args...)
+
+
+function central_wavelength()
+
+end
+
+# """
+#     effective_wavelength(::PhotometricFilter)
+
+# Return the effective wavelength
+# """
+# function effective_wavelength()
+# end
+
+function pivot_wavelength()
+end
+
+function norm()
+
+end
+
+"""
+    apply(::PhotometricFilter, wave, flux)
+
+Use linear interpolation to map the wavelenghts of the photometric filter to the given wavelengths and apply the filter throughput to the `flux`. The wavelengths of the filter and `wave` need to be compatible. This means if one has units, the other one needs units, too.
+
+# See also
+[`interpolator`](@ref)
+"""
+apply(filt::PhotometricFilter, wave, flux) = apply!(filt, wave, flux, similar(flux))
+
+"""
+    apply!(::PhotometricFilter, wave, flux, out)
+
+In-place version of [`apply`](@ref) which modifies `out`. It should have a compatible element type with `flux`.
+"""
+function apply!(filt::PhotometricFilter, wave, flux, out)
+    etp = interpolator(filt)
+    @. out = flux * etp(wave)
+    return out
+end
+
+function interpolator(filt::PhotometricFilter)
+    x = wave(filt)
+    y = throughput(filt)
+    bc = zero(eltype(y))
+    return LinearInterpolation(x, y; extrapolation_bc=bc)
+end
+
+function fwhm(filt::PhotometricFilter)
+    y = throughput(filt)
+    Δ = diff(sign.(y ./ maximum(y) .- 0.5))
+    i1 = findfirst(!iszero, Δ)
+    i2 = findnext(!iszero, Δ, i1 + 1)
+    return wave(filt)[i2] - wave(filt)[i1]
+end
