@@ -24,7 +24,7 @@ plotting works out of the box
 
 ```julia
 using Plots, ColorSchemes
-plot(filts, palette=palette(:magma, 8))
+plot(filts, palette=palette(:magma, 8), fill=(0, 0.2))
 ```
 
 ![](sdss.png)
