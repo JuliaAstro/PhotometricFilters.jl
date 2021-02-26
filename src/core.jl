@@ -85,7 +85,7 @@ function apply!(filt::PhotometricFilter, wave, flux, out)
 end
 
 function interpolator(filt::PhotometricFilter)
-    x = wave(filt)
+    x = wave(filt) |> ustrip
     y = throughput(filt)
     bc = zero(eltype(y))
     return LinearInterpolation(x, y; extrapolation_bc=bc)
@@ -97,4 +97,25 @@ function fwhm(filt::PhotometricFilter)
     i1 = findfirst(!iszero, Δ)
     i2 = findnext(!iszero, Δ, i1 + 1)
     return wave(filt)[i2] - wave(filt)[i1]
+end
+
+function Base.:+(f1::PhotometricFilter, f2::PhotometricFilter)
+    # find total extent and log-spacing
+    w1 = wave(f1)
+    w2 = wave(f2)
+    e1 = extrema(w1)
+    e2 = extrema(w2)
+    min_wl = min(e1[1], e2[1])
+    max_wl = max(e1[2], e2[2])
+    δwl1 = (e1[2] - e1[1]) / length(w1)
+    δwl2 = (e2[2] - e2[1]) / length(w2)
+    δ = min(δwl1, δwl2)
+
+    wl = min_wl:δ:max_wl
+
+    etp1 = interpolator(f1)
+    etp2 = interpolator(f2)
+    through = @. etp1(ustrip(wl)) + etp2(ustrip(wl))
+    name = "$(f1.name) + $(f2.name)"
+    return PhotometricFilter(wl, through, f1.detector, name)
 end
