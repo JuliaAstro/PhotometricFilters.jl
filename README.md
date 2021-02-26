@@ -6,3 +6,39 @@
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaastro.github.io/PhotometricFilters.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaastro.github.io/PhotometricFilters.jl/dev)
+
+**WIP** @mileslucas
+
+## Installation
+
+## Usage
+
+```julia
+using PhotometricFilters
+using PhotometricFilters: SDSS_u, SDSS_g, SDSS_r, SDSS_i, SDSS_z
+
+filts = [SDSS_u(), SDSS_g(), SDSS_r(), SDSS_i(), SDSS_z()]
+combined = sum(filts)
+```
+
+plotting works out of the box
+
+```julia
+using Plots
+plot(combined, label="")
+plot!(filts)
+```
+
+![](sdss.png)
+
+Using [Unitful.jl](https://github.com/painterqubits/Unitful.jl) is built in to all functionality
+
+```julia
+
+julia> filt_units = SDSS_u(units=true);
+
+julia> fwhm(filt_units)
+600.0 Å
+```
+
+## Citations
