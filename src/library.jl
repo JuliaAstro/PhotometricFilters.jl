@@ -313,5 +313,5 @@ const FILTER_NAMES = [
 
 for filter_name in FILTER_NAMES
     F = Symbol(filter_name)
-    @eval $F(; units=false) = read_filter($filter_name, units)
+    @eval $F(; units=true) = read_filter($filter_name, units)
 end
