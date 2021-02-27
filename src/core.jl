@@ -1,4 +1,6 @@
 using Interpolations
+using Trapz
+using Unitful
 
 abstract type AbstractFilter{T} <: AbstractVector{T} end
 
@@ -17,7 +19,7 @@ function Base.parse(::Type{DetectorType}, s::AbstractString)
     end
 end
 
-struct PhotometricFilter{T,WT,TT<:AbstractVector{T},DT<:DetectorType,ST<:Union{String,Nothing},ET} <: AbstractFilter{T}
+struct PhotometricFilter{T,WT,DT<:DetectorType,TT<:AbstractVector{T},ST<:Union{String,Nothing},ET} <: AbstractFilter{T}
     wave::WT
     throughput::TT
     detector::DT
@@ -25,9 +27,10 @@ struct PhotometricFilter{T,WT,TT<:AbstractVector{T},DT<:DetectorType,ST<:Union{S
     etp::ET
 end
 
-function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector; detector=Photon(), name=nothing)
+function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector{T}; detector=Photon(), name=nothing) where T
     length(wave) == length(throughput) || error("wavelength and throughput arrays must match")
-    etp = interpolator(wave, throughput)
+    bc = zero(T)
+    etp = LinearInterpolation(ustrip(wave), throughput; extrapolation_bc=bc)
     return PhotometricFilter(wave, throughput, detector, name, etp)
 end
 
@@ -36,11 +39,23 @@ Base.getindex(f::PhotometricFilter, idx...) = throughput(f)[idx...]
 Base.show(io::IO, f::PhotometricFilter) = print(io, f.name)
 
 function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter)
-    print(io, "PhotometricFilter: $(f.name)\n wave: ", f.wave, "\n throughput: ", f.throughput)
+    # eff_wl = 
+    piv_wl = pivot_wavelength(f)
+    eff_width = width(f)
+    Γ = fwhm(f)
+    print(io, "PhotometricFilter: $(f.name)\n wave: ", f.wave, "\n throughput: ", f.throughput, "\n pivot wave.: ", piv_wl, "\n eff. width: ", eff_width, "\n fwhm: ", Γ)
 end
 
 wave(f::PhotometricFilter) = f.wave
 throughput(f::PhotometricFilter) = f.throughput
+
+(f::PhotometricFilter)(wave) = f.etp(wave)
+
+function (f::PhotometricFilter)(wave::Q) where Q <: Unitful.Length
+    # strip units because Interpolations.jl doesn't work nicely with them
+    wl = ustrip(unit(eltype(f.wave)), wave)
+    return f.etp(wl)
+end
 
 Base.size(f::PhotometricFilter) = size(throughput(f))
 
@@ -56,7 +71,25 @@ end
 # function effective_wavelength()
 # end
 
-function pivot_wavelength()
+"""
+    pivot_wavelength(::PhotometricFilter)
+
+Returns the pivot wavelength of the filter, described by the equation below. Internally integration is carried out using trapezoidal integration. It can be convenient to think of this as the "center of mass" of the filter.
+"""
+function pivot_wavelength(f::PhotometricFilter{T,S,<:Photon}) where {T,S}
+    wl = ustrip(wave(f))
+    y = throughput(f) ./ wl
+    norm = trapz(wl, wl .* throughput(f))
+    lp2 = norm / trapz(wl, y)
+    return sqrt(lp2) * unit(eltype(wave(f)))
+end
+
+function pivot_wavelength(f::PhotometricFilter{T,S,<:Energy}) where {T,S}
+    wl = ustrip(wave(f))
+    y = throughput(f) ./ wl.^2
+    norm = trapz(wl, throughput(f))
+    lp2 = norm / trapz(wl, y)
+    return sqrt(lp2) * unit(eltype(wave(f)))
 end
 
 function norm()
@@ -79,16 +112,8 @@ apply(filt::PhotometricFilter, wave, flux) = apply!(filt, wave, flux, similar(fl
 In-place version of [`apply`](@ref) which modifies `out`. It should have a compatible element type with `flux`.
 """
 function apply!(filt::PhotometricFilter, wave, flux, out)
-    etp = interpolator(filt)
-    @. out = flux * etp(wave)
+    @. out = flux * filt(wave)
     return out
-end
-
-interpolator(filt::PhotometricFilter) = filt.etp
-
-function interpolator(wave, throughput)
-    bc = zero(eltype(throughput))
-    return LinearInterpolation(wave, throughput; extrapolation_bc=bc)
 end
 
 function fwhm(filt::PhotometricFilter)
@@ -96,6 +121,11 @@ function fwhm(filt::PhotometricFilter)
     i1 = findfirst(!iszero, Δ)
     i2 = findnext(!iszero, Δ, i1 + 1)
     return wave(filt)[i2] - wave(filt)[i1]
+end
+
+function width(f::PhotometricFilter)
+    norm = trapz(ustrip(wave(f)), throughput(f))
+    return norm / maximum(throughput(f)) * unit(eltype(wave(f)))
 end
 
 function Base.:*(f1::PhotometricFilter, f2::PhotometricFilter)
@@ -113,9 +143,7 @@ function Base.:*(f1::PhotometricFilter, f2::PhotometricFilter)
 
     wl = min_wl:δ:max_wl
 
-    etp1 = interpolator(f1)
-    etp2 = interpolator(f2)
-    through = @. etp1(ustrip(wl)) * etp2(ustrip(wl))
+    through = @. f1(wl) * f2(wl)
     name = "$(f1.name) * $(f2.name)"
     return PhotometricFilter(wl, through; detector=f1.detector, name=name)
 end
