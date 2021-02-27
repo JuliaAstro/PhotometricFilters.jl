@@ -38,12 +38,15 @@ Base.getindex(f::PhotometricFilter, idx...) = throughput(f)[idx...]
 
 Base.show(io::IO, f::PhotometricFilter) = print(io, f.name)
 
-function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter)
-    # eff_wl = 
+function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter{T}) where T
+    N = length(f)
+    min_wl = min_wave(f)
+    max_wl = max_wave(f)
     piv_wl = pivot_wavelength(f)
+    cen_wl = central_wavelength(f)
     eff_width = width(f)
     Γ = fwhm(f)
-    print(io, "PhotometricFilter: $(f.name)\n wave: ", f.wave, "\n throughput: ", f.throughput, "\n pivot wave.: ", piv_wl, "\n eff. width: ", eff_width, "\n fwhm: ", Γ)
+    print(io, "$N-element PhotometricFilter{$T}: ", f.name, "\n min. wave.: ", min_wl, "\n max. wave.: ", max_wl, "\n central wave.: ", cen_wl, "\n pivot wave.: ", piv_wl, "\n eff. width: ", eff_width, "\n fwhm: ", Γ)
 end
 
 wave(f::PhotometricFilter) = f.wave
@@ -58,10 +61,6 @@ function (f::PhotometricFilter)(wave::Q) where Q <: Unitful.Length
 end
 
 Base.size(f::PhotometricFilter) = size(throughput(f))
-
-function central_wavelength()
-
-end
 
 # """
 #     effective_wavelength(::PhotometricFilter)
@@ -92,8 +91,24 @@ function pivot_wavelength(f::PhotometricFilter{T,S,<:Energy}) where {T,S}
     return sqrt(lp2) * unit(eltype(wave(f)))
 end
 
-function norm()
 
+function central_wavelength(f::PhotometricFilter)
+    wl = ustrip(wave(f))
+    norm = trapz(wl, throughput(f))
+    lt = trapz(wl, wl .* throughput(f))
+    return  lt / norm * unit(eltype(wave(f)))
+end
+
+function min_wave(f::PhotometricFilter; level=0.01)
+    y = throughput(f)
+    idx = findfirst(q -> q / maximum(y) > level, y)
+    return wave(f)[idx]
+end
+
+function max_wave(f::PhotometricFilter; level=0.01)
+    y = throughput(f)
+    idx = findlast(q -> q / maximum(y) > level, y)
+    return wave(f)[idx]
 end
 
 """
