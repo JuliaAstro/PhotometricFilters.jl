@@ -44,9 +44,10 @@ function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter{T}) where T
     max_wl = max_wave(f)
     piv_wl = pivot_wavelength(f)
     cen_wl = central_wavelength(f)
+    eff_wl = effective_wavelength(f)
     eff_width = width(f)
     Γ = fwhm(f)
-    print(io, "$N-element PhotometricFilter{$T}: ", f.name, "\n min. wave.: ", min_wl, "\n max. wave.: ", max_wl, "\n central wave.: ", cen_wl, "\n pivot wave.: ", piv_wl, "\n eff. width: ", eff_width, "\n fwhm: ", Γ)
+    print(io, "$N-element PhotometricFilter{$T}: ", f.name, "\n min. wave.: ", min_wl, "\n max. wave.: ", max_wl, "\n effective wave.: ", eff_wl, "\n central wave.: ", cen_wl, "\n pivot wave.: ", piv_wl, "\n eff. width: ", eff_width, "\n fwhm: ", Γ)
 end
 
 wave(f::PhotometricFilter) = f.wave
@@ -62,13 +63,20 @@ end
 
 Base.size(f::PhotometricFilter) = size(throughput(f))
 
-# """
-#     effective_wavelength(::PhotometricFilter)
+"""
+    effective_wavelength(::PhotometricFilter)
 
-# Return the effective wavelength
-# """
-# function effective_wavelength()
-# end
+Return the effective wavelength using the Vega spectrum as a standard
+"""
+function effective_wavelength(f::PhotometricFilter)
+    wvega, fvega = Vega()
+    u = unit(eltype(wave(f)))
+    wl = ustrip.(u, wvega)
+    filt = f.(wvega) .* fvega
+    norm = trapz(wl, filt)
+    leff = trapz(wl, wl .* filt)
+    return leff / norm * u
+end
 
 """
     pivot_wavelength(::PhotometricFilter)
