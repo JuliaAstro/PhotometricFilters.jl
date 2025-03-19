@@ -47,7 +47,14 @@ function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter{T}) where T
     eff_wl = effective_wavelength(f)
     eff_width = width(f)
     Γ = fwhm(f)
-    print(io, "$N-element PhotometricFilter{$T}: ", f.name, "\n min. wave.: ", min_wl, "\n max. wave.: ", max_wl, "\n effective wave.: ", eff_wl, "\n central wave.: ", cen_wl, "\n pivot wave.: ", piv_wl, "\n eff. width: ", eff_width, "\n fwhm: ", Γ)
+    println(io, "$N-element PhotometricFilter{$T}: ", f.name)
+    println(io, " min. wave.: ", min_wl)
+    println(io, " max. wave.: ", max_wl)
+    println(io, " effective wave.: ", eff_wl)
+    println(io, " central wave.: ", cen_wl)
+    println(io, " pivot wave.: ", piv_wl)
+    println(io, " eff. width: ", eff_width)
+    print(io,   " fwhm: ", Γ)
 end
 
 wave(f::PhotometricFilter) = f.wave
