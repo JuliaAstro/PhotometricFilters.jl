@@ -1,10 +1,11 @@
 using PhotometricFilters
 using Documenter
+using Documenter.Remotes: GitHub
 
 makedocs(;
     modules=[PhotometricFilters],
     authors="Miles Lucas <mdlucas@hawaii.edu> and contributors",
-    repo="https://github.com/juliaastro/PhotometricFilters.jl/blob/{commit}{path}#L{line}",
+    repo=GitHub("JuliaAstro/PhotometricFilters.jl"),
     sitename="PhotometricFilters.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
