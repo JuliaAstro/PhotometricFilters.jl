@@ -14,6 +14,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 DataDeps = "0.7"
+DelimitedFiles = "1"
 HDF5 = "0.15, 0.17"
 Interpolations = "0.13, 0.15"
 RecipesBase = "1.1"
