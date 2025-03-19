@@ -18,5 +18,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/juliaastro/PhotometricFilters.jl",
+    repo="github.com/JuliaAstro/PhotometricFilters.jl",
 )
