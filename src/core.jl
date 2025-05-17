@@ -145,8 +145,7 @@ end
 
 function fwhm(filt::PhotometricFilter)
     Δ = diff(sign.(filt ./ maximum(filt) .- 0.5))
-    i1 = findfirst(!iszero, Δ)
-    i2 = findnext(!iszero, Δ, i1 + 1)
+    i1, i2 = findall(!iszero, Δ)[[begin, end]]
     return wave(filt)[i2] - wave(filt)[i1]
 end
 
