@@ -30,6 +30,10 @@ jobs:
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
+      - run: |
+            julia --color=yes -e '
+            using Pkg
+            Pkg.add(VOTables#master)'
       - uses: julia-actions/julia-runtest@v1
         env:
           DATADEPS_ALWAYS_ACCEPT: true
