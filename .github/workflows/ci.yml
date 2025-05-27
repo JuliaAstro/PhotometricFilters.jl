@@ -33,7 +33,7 @@ jobs:
       - run: |
             julia --color=yes -e '
             using Pkg
-            Pkg.add(VOTables#master)'
+            Pkg.add(name="VOTables", rev="master")'
       - uses: julia-actions/julia-runtest@v1
         env:
           DATADEPS_ALWAYS_ACCEPT: true
