@@ -130,7 +130,7 @@ end
 """
     apply(::PhotometricFilter, wave, flux)
 
-Use linear interpolation to map the wavelenghts of the photometric filter to the given wavelengths and apply the filter throughput to the `flux`. The wavelengths of the filter and `wave` need to be compatible. This means if one has units, the other one needs units, too.
+Use linear interpolation to map the wavelengths of the photometric filter to the given wavelengths and apply the filter throughput to the `flux`. The wavelengths of the filter and `wave` need to be compatible. This means if one has units, the other one needs units, too.
 """
 apply(filt::PhotometricFilter, wave, flux) = apply!(filt, wave, flux, similar(flux))
 
