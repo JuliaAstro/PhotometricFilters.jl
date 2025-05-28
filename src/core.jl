@@ -30,7 +30,7 @@ end
 function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector{T}; detector=Photon(), name=nothing) where T
     length(wave) == length(throughput) || error("wavelength and throughput arrays must match")
     bc = zero(T)
-    etp = LinearInterpolation(ustrip(wave), throughput; extrapolation_bc=bc)
+    etp = linear_interpolation(ustrip.(wave), throughput; extrapolation_bc=bc)
     return PhotometricFilter(wave, throughput, detector, name, etp)
 end
 
@@ -64,7 +64,7 @@ throughput(f::PhotometricFilter) = f.throughput
 
 function (f::PhotometricFilter)(wave::Q) where Q <: Unitful.Length
     # strip units because Interpolations.jl doesn't work nicely with them
-    wl = ustrip(unit(eltype(f.wave)), wave)
+    wl = ustrip.(unit(eltype(f.wave)), wave)
     return f.etp(wl)
 end
 
@@ -91,7 +91,7 @@ end
 Returns the pivot wavelength of the filter, described by the equation below. Internally integration is carried out using trapezoidal integration. It can be convenient to think of this as the "center of mass" of the filter.
 """
 function pivot_wavelength(f::PhotometricFilter{T,S,<:Photon}) where {T,S}
-    wl = ustrip(wave(f))
+    wl = ustrip.(wave(f))
     y = throughput(f) ./ wl
     norm = trapz(wl, wl .* throughput(f))
     lp2 = norm / trapz(wl, y)
@@ -99,7 +99,7 @@ function pivot_wavelength(f::PhotometricFilter{T,S,<:Photon}) where {T,S}
 end
 
 function pivot_wavelength(f::PhotometricFilter{T,S,<:Energy}) where {T,S}
-    wl = ustrip(wave(f))
+    wl = ustrip.(wave(f))
     y = throughput(f) ./ wl.^2
     norm = trapz(wl, throughput(f))
     lp2 = norm / trapz(wl, y)
@@ -108,7 +108,7 @@ end
 
 
 function central_wavelength(f::PhotometricFilter)
-    wl = ustrip(wave(f))
+    wl = ustrip.(wave(f))
     norm = trapz(wl, throughput(f))
     lt = trapz(wl, wl .* throughput(f))
     return  lt / norm * unit(eltype(wave(f)))
@@ -151,7 +151,7 @@ function fwhm(filt::PhotometricFilter)
 end
 
 function width(f::PhotometricFilter)
-    norm = trapz(ustrip(wave(f)), throughput(f))
+    norm = trapz(ustrip.(wave(f)), throughput(f))
     return norm / maximum(throughput(f)) * unit(eltype(wave(f)))
 end
 
