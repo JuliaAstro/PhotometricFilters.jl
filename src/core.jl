@@ -27,8 +27,9 @@ struct PhotometricFilter{T,WT,DT<:DetectorType,TT<:AbstractVector{T},ST<:Union{S
     etp::ET
 end
 
-function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector{T}; detector=Photon(), name=nothing) where T
-    length(wave) == length(throughput) || error("wavelength and throughput arrays must match")
+function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector{T};
+                           detector::DetectorType=Photon(), name::Union{String,Nothing}=nothing) where T
+    length(wave) == length(throughput) || throw(ArgumentError("Wavelength and throughput arrays must have equal length"))
     bc = zero(T)
     etp = linear_interpolation(ustrip.(wave), throughput; extrapolation_bc=bc)
     return PhotometricFilter(wave, throughput, detector, name, etp)
