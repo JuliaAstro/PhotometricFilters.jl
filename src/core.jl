@@ -1,5 +1,5 @@
-using Interpolations
-using Trapz
+using Interpolations: linear_interpolation
+using Trapz: trapz
 using Unitful
 
 abstract type AbstractFilter{T} <: AbstractVector{T} end
@@ -19,7 +19,8 @@ function Base.parse(::Type{DetectorType}, s::AbstractString)
     end
 end
 
-struct PhotometricFilter{T,WT,DT<:DetectorType,TT<:AbstractVector{T},ST<:Union{String,Nothing},ET} <: AbstractFilter{T}
+struct PhotometricFilter{T, WT, DT <: DetectorType, TT <: AbstractVector{T},
+                         ST <: Union{String, Nothing}, ET} <: AbstractFilter{T}
     wave::WT
     throughput::TT
     detector::DT
@@ -28,8 +29,10 @@ struct PhotometricFilter{T,WT,DT<:DetectorType,TT<:AbstractVector{T},ST<:Union{S
 end
 
 function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector{T};
-                           detector::DetectorType=Photon(), name::Union{String,Nothing}=nothing) where T
-    length(wave) == length(throughput) || throw(ArgumentError("Wavelength and throughput arrays must have equal length"))
+                           detector::DetectorType=Photon(), name::Union{String, Nothing}=nothing) where T
+    if length(wave) != length(throughput)
+        throw(ArgumentError("Wavelength and throughput arrays must have equal length"))
+    end
     bc = zero(T)
     etp = linear_interpolation(ustrip.(wave), throughput; extrapolation_bc=bc)
     return PhotometricFilter(wave, throughput, detector, name, etp)
@@ -91,7 +94,7 @@ end
 
 Returns the pivot wavelength of the filter, described by the equation below. Internally integration is carried out using trapezoidal integration. It can be convenient to think of this as the "center of mass" of the filter.
 """
-function pivot_wavelength(f::PhotometricFilter{T,S,<:Photon}) where {T,S}
+function pivot_wavelength(f::PhotometricFilter{T, S, <:Photon}) where {T, S}
     wl = ustrip.(wave(f))
     y = throughput(f) ./ wl
     norm = trapz(wl, wl .* throughput(f))
@@ -99,7 +102,7 @@ function pivot_wavelength(f::PhotometricFilter{T,S,<:Photon}) where {T,S}
     return sqrt(lp2) * unit(eltype(wave(f)))
 end
 
-function pivot_wavelength(f::PhotometricFilter{T,S,<:Energy}) where {T,S}
+function pivot_wavelength(f::PhotometricFilter{T, S, <:Energy}) where {T, S}
     wl = ustrip.(wave(f))
     y = throughput(f) ./ wl.^2
     norm = trapz(wl, throughput(f))
