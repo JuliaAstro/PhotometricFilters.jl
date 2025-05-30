@@ -28,14 +28,57 @@ struct PhotometricFilter{T, WT, DT <: DetectorType, TT <: AbstractVector{T},
     etp::ET
 end
 
+"""Default unit for wavelengths when not otherwise specified."""
+const wave_unit = Unitful.angstrom
+
+# Dispatch method for PhotometricFilter constructor
+_convert_wave(w) = w
+_convert_wave(w::Unitful.Length) = ustrip(wave_unit, w)
+_convert_wave(w::Quantity) = throw(ArgumentError("Provided wavelengths have incompatible dimensions -- expected length (𝐋), received $(dimension(w))."))
+
+"""
+    PhotometricFilter(wave::AbstractVector, throughput::AbstractVector{T};
+                      detector::DetectorType=Photon(), name::Union{String, Nothing}=nothing)
+Struct representing a photometric filter, defined by vectors of wavelengths (`wave`) and filter throughputs (`throughput`).
+`wave` can have `Unitful` units attached, otherwise they are assumed to be $wave_unit.
+Optional keyword arguments define the detector type for which the filter is valid and a name to identify the filter.
+```jldoctest
+julia> using PhotometricFilters: PhotometricFilter, Photon, wave, throughput
+
+julia> using Unitful
+
+julia> f = PhotometricFilter(1000:2000, vcat(fill(0.25, 250), fill(0.5, 500), fill(0.25, 251))) # Specify only wavelength and throughput
+1001-element PhotometricFilter{Float64}: nothing
+ min. wave.: 1000 Å
+ max. wave.: 2000 Å
+ effective wave.: 1603.6927025575474 Å
+ central wave.: 1499.8333333333333 Å
+ pivot wave.: 1478.1028279485677 Å
+ eff. width: 750.0 Å
+ fwhm: 500 Å
+
+julia> f == PhotometricFilter(uconvert.(Unitful.nm, wave(f)), throughput(f)) # Can also specify wavelength argument with Unitful units
+true
+
+julia> f[10] # Indexing into the filter as `f[i]` returns `throughput(f)[i]`
+0.25
+
+julia> f(1001.1) # Calling `f` like a function interpolates the throughput
+0.25
+
+julia> f(100.11 * Unitful.nm) # Can also specify wavelength with units
+0.25
+```
+"""
 function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector{T};
                            detector::DetectorType=Photon(), name::Union{String, Nothing}=nothing) where T
     if length(wave) != length(throughput)
         throw(ArgumentError("Wavelength and throughput arrays must have equal length"))
     end
     bc = zero(T)
-    etp = linear_interpolation(ustrip.(wave), throughput; extrapolation_bc=bc)
-    return PhotometricFilter(wave, throughput, detector, name, etp)
+    wv = _convert_wave.(wave)
+    etp = linear_interpolation(wv, throughput; extrapolation_bc=bc)
+    return PhotometricFilter(wv, throughput, detector, name, etp)
 end
 
 Base.getindex(f::PhotometricFilter, idx...) = throughput(f)[idx...]
@@ -54,61 +97,59 @@ function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter{T}) where T
     print(io,   " fwhm: ", fwhm(f))
 end
 
-wave(f::PhotometricFilter) = f.wave
+wave(f::PhotometricFilter) = f.wave .* wave_unit
 throughput(f::PhotometricFilter) = f.throughput
 
 (f::PhotometricFilter)(wave) = f.etp(wave)
 
 function (f::PhotometricFilter)(wave::Q) where Q <: Unitful.Length
-    # strip units because Interpolations.jl doesn't work nicely with them
-    wl = ustrip.(unit(eltype(f.wave)), wave)
-    return f.etp(wl)
+    wl = ustrip.(wave_unit, wave)
+    return f(wl)
 end
 
 Base.size(f::PhotometricFilter) = size(throughput(f))
 
 """
-    effective_wavelength(::PhotometricFilter)
+    effective_wavelength(f::PhotometricFilter)
 
-Return the effective wavelength using the Vega spectrum as a standard
+Returns the effective wavelength of the filter `f` using the Vega spectrum as a standard.
 """
 function effective_wavelength(f::PhotometricFilter)
     wvega, fvega = Vega()
-    u = unit(eltype(wave(f)))
-    wl = ustrip.(u, wvega)
-    filt = f.(wvega) .* fvega
+    wl = uconvert.(wave_unit, wvega)
+    filt = f.(wl) .* fvega
     norm = trapz(wl, filt)
     leff = trapz(wl, wl .* filt)
-    return leff / norm * u
+    return leff / norm
 end
 
 """
-    pivot_wavelength(::PhotometricFilter)
+    pivot_wavelength(f::PhotometricFilter)
 
-Returns the pivot wavelength of the filter, described by the equation below. Internally integration is carried out using trapezoidal integration. It can be convenient to think of this as the "center of mass" of the filter.
+Returns the pivot wavelength of the filter `f`, described by the equation below. Internally integration is carried out using trapezoidal integration. It can be convenient to think of this as the "center of mass" of the filter.
 """
 function pivot_wavelength(f::PhotometricFilter{T, S, <:Photon}) where {T, S}
-    wl = ustrip.(wave(f))
+    wl = wave(f)
     y = throughput(f) ./ wl
     norm = trapz(wl, wl .* throughput(f))
     lp2 = norm / trapz(wl, y)
-    return sqrt(lp2) * unit(eltype(wave(f)))
+    return sqrt(lp2)
 end
 
 function pivot_wavelength(f::PhotometricFilter{T, S, <:Energy}) where {T, S}
-    wl = ustrip.(wave(f))
+    wl = wave(f)
     y = throughput(f) ./ wl.^2
     norm = trapz(wl, throughput(f))
     lp2 = norm / trapz(wl, y)
-    return sqrt(lp2) * unit(eltype(wave(f)))
+    return sqrt(lp2)
 end
 
 
 function central_wavelength(f::PhotometricFilter)
-    wl = ustrip.(wave(f))
+    wl = wave(f)
     norm = trapz(wl, throughput(f))
     lt = trapz(wl, wl .* throughput(f))
-    return  lt / norm * unit(eltype(wave(f)))
+    return  lt / norm
 end
 
 function min_wave(f::PhotometricFilter; level=0.01)
@@ -124,9 +165,9 @@ function max_wave(f::PhotometricFilter; level=0.01)
 end
 
 """
-    apply(::PhotometricFilter, wave, flux)
+    apply(f::PhotometricFilter, wave, flux)
 
-Use linear interpolation to map the wavelengths of the photometric filter to the given wavelengths and apply the filter throughput to the `flux`. The wavelengths of the filter and `wave` need to be compatible. This means if one has units, the other one needs units, too.
+Use linear interpolation to map the wavelengths of the photometric filter `f` to the given wavelengths and apply the filter throughput to the `flux`. The wavelengths of the filter and `wave` need to be compatible. This means if one has units, the other one needs units, too.
 """
 apply(filt::PhotometricFilter, wave, flux) = apply!(filt, wave, flux, similar(flux))
 
@@ -141,15 +182,15 @@ function apply!(filt::PhotometricFilter, wave, flux, out)
 end
 
 function fwhm(filt::PhotometricFilter)
-    Δ = diff(sign.(filt ./ maximum(filt) .- 0.5))
+    Δ = diff(sign.(filt ./ maximum(filt) .- 1//2))
     nonzeros = findall(!iszero, Δ)
     i1, i2 = first(nonzeros), last(nonzeros)
     return wave(filt)[i2] - wave(filt)[i1]
 end
 
 function width(f::PhotometricFilter)
-    norm = trapz(ustrip.(wave(f)), throughput(f))
-    return norm / maximum(throughput(f)) * unit(eltype(wave(f)))
+    norm = trapz(wave(f), throughput(f))
+    return norm / maximum(throughput(f))
 end
 
 function Base.:*(f1::PhotometricFilter, f2::PhotometricFilter)
