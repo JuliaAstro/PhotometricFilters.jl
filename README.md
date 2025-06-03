@@ -4,7 +4,7 @@
 [![Coverage](https://codecov.io/gh/juliaastro/PhotometricFilters.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/juliaastro/PhotometricFilters.jl)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaastro.github.io/PhotometricFilters.jl/stable)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaastro.org/PhotometricFilters/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaastro.github.io/PhotometricFilters.jl/dev)
 
 **WIP** @mileslucas
@@ -15,7 +15,7 @@
 
 ```julia
 using PhotometricFilters
-using PhotometricFilters: SDSS_u, SDSS_g, SDSS_r, SDSS_i, SDSS_z
+using PhotometricFilters: SDSS_u, SDSS_g, SDSS_r, SDSS_i, SDSS_z, fwhm
 
 filts = [SDSS_u(), SDSS_g(), SDSS_r(), SDSS_i(), SDSS_z()]
 ```
