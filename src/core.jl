@@ -225,6 +225,26 @@ end
     apply(f::PhotometricFilter, wave, flux)
 
 Use linear interpolation to map the wavelengths of the photometric filter `f` to the given wavelengths `wave` and apply the filter throughput to the `flux`. The wavelengths of the filter and `wave` need to be compatible. This means if one has units, the other one needs units, too.
+
+```jldoctest
+julia> using PhotometricFilters: SDSS_u, wave_unit, apply
+
+julia> f = SDSS_u();
+
+julia> λ = 3000:4000
+3000:4000
+
+julia> flux = fill(1.0, length(λ)); # If `flux` is all `1`, `apply` reduces to `f` interpolated at `λ`
+
+julia> apply(f, λ, flux) == f(λ)
+true
+
+julia> λ_u = λ .* wave_unit # Can also put units on λ
+(3000:4000) Å
+
+julia> apply(f, λ_u, flux) == f.(λ_u)
+true
+```
 """
 apply(filt::PhotometricFilter, wave, flux) = apply!(filt, wave, flux, similar(flux))
 
