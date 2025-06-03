@@ -7,8 +7,6 @@
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaastro.org/PhotometricFilters/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaastro.github.io/PhotometricFilters.jl/dev)
 
-**WIP** @mileslucas
-
 ## Installation
 
 ## Usage
