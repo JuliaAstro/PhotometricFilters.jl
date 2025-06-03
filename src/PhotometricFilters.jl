@@ -3,7 +3,8 @@ module PhotometricFilters
 using DataDeps
 using DelimitedFiles
 
-export PhotometricFilter, 
+export PhotometricFilter,
+       get_filter,
        wave, 
        throughput, 
        apply, 
