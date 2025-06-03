@@ -40,6 +40,24 @@ get_filter
 ## Supported Operations
 We include functions for performing many common operations on photometric filters, summarized below.
 
+### Applying Filter Curves to Spectra
+
+```@docs
+apply
+apply!
+```
+
+### Statistics
+```@docs
+PhotometricFilters.central_wavelength
+PhotometricFilters.effective_wavelength
+PhotometricFilters.pivot_wavelength
+PhotometricFilters.min_wave
+PhotometricFilters.max_wave
+PhotometricFilters.fwhm
+PhotometricFilters.width
+```
+
 
 ## Index
 
