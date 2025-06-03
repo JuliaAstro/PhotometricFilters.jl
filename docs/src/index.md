@@ -63,7 +63,3 @@ PhotometricFilters.width
 
 ```@index
 ```
-
-```@autodocs
-Modules = [PhotometricFilters]
-```
