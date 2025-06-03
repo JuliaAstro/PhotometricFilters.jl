@@ -19,5 +19,6 @@ makedocs(;
 
 deploydocs(;
            repo = "github.com/JuliaAstro/PhotometricFilters.jl",
-           versions = ["stable" => "v^", "v#.#"] # Restrict to minor releases
+           versions = ["stable" => "v^", "v#.#"], # Restrict to minor releases
+           push_preview = true
            )
