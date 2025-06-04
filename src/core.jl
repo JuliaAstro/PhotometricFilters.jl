@@ -197,15 +197,15 @@ function max_wave(f::PhotometricFilter; level=0.01)
 end
 
 """
-    fwhm(filt::PhotometricFilter)
+    fwhm(f::PhotometricFilter)
 
 Returns the difference between the furthest two wavelengths for which the filter transmission is equal to half its maximum value.
 """
-function fwhm(filt::PhotometricFilter)
-    Δ = diff(sign.(filt ./ maximum(filt) .- 1//2))
+function fwhm(f::PhotometricFilter)
+    Δ = diff(sign.(f ./ maximum(f) .- 1//2))
     nonzeros = findall(!iszero, Δ)
     i1, i2 = first(nonzeros), last(nonzeros)
-    return wave(filt)[i2] - wave(filt)[i1]
+    return wave(f)[i2] - wave(f)[i1]
 end
 
 """
