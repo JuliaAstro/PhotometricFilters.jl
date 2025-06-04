@@ -1,4 +1,4 @@
-using Interpolations: linear_interpolation
+using Interpolations: linear_interpolation, deduplicate_knots!
 using Trapz: trapz
 using Unitful
 
@@ -77,6 +77,7 @@ function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector{T};
     end
     bc = zero(T)
     wv = _convert_wave.(wave)
+    deduplicate_knots!(wv; move_knots=true) # Ensure wave entries are all unique
     etp = linear_interpolation(wv, throughput; extrapolation_bc=bc)
     return PhotometricFilter(wv, throughput, detector, name, etp)
 end
