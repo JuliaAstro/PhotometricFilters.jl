@@ -7,5 +7,5 @@ DocMeta.setdocmeta!(PhotometricFilters, :DocTestSetup, :(using PhotometricFilter
 doctest(PhotometricFilters)
 
 @testset "PhotometricFilters.jl" begin
-    # Write your tests here.
+    @safetestset "Library" include("library_tests.jl")
 end
