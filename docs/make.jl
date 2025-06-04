@@ -15,7 +15,9 @@ makedocs(;
          pages = [
                   "Home" => "index.md",
                  ],
-         warnonly = [:missing_docs]
+         doctest = false,
+         linkcheck = true,
+         warnonly = [:missing_docs, :linkcheck]
          )
 
 deploydocs(;
