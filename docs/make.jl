@@ -5,7 +5,7 @@ using Documenter.Remotes: GitHub
 makedocs(;
          sitename = "PhotometricFilters.jl",
          modules = [PhotometricFilters],
-         authors = "Miles Lucas <mdlucas@hawaii.edu>, Chris Garling, and contributors",
+         authors = "Miles Lucas <mdlucas@hawaii.edu>, Chris Garling, Lucas Valenzuela, and contributors",
          repo = GitHub("JuliaAstro/PhotometricFilters.jl"),
          format = HTML(;
                        prettyurls = get(ENV, "CI", nothing) == "true",

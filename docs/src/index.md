@@ -31,10 +31,16 @@ using PhotometricFilters: SDSS_u, SDSS_g, SDSS_r, SDSS_i, SDSS_z, fwhm
 filts = [SDSS_u(), SDSS_g(), SDSS_r(), SDSS_i(), SDSS_z()]
 ```
 
-**NOTE THAT THESE INCLUDED FILTER CURVES ARE NOT GUARANTEED TO BE UP-TO-DATE.** If you are using a filter/instrument that may have recently had its filter curves updated (e.g., JWST/NIRCAM), you should use our SVO query interface to make sure you get the most up-to-date filter curves. The SVO filter database can be queried with [`get_filter`](@ref), which returns an instance of [`PhotometricFilter`](@ref).
+**NOTE THAT THESE INCLUDED FILTER CURVES ARE NOT GUARANTEED TO BE UP-TO-DATE.** If you are using a filter/instrument that may have recently had its filter curves updated (e.g., JWST/NIRCAM), you should use our SVO query interface to make sure you get the most up-to-date filter curves. If you know the SVO-designated name of the filter you want, you can use [`get_filter`](@ref) to retrieve its transmission data, which returns an instance of [`PhotometricFilter`](@ref).
 
 ```@docs
 get_filter
+```
+
+If you'd like to perform a search on the filters available through the SVO filter service, you can use [`query_filters`](@ref).
+
+```@docs
+query_filters
 ```
 
 ## Supported Operations
@@ -58,6 +64,10 @@ PhotometricFilters.fwhm
 PhotometricFilters.width
 ```
 
+## Internal Functions
+```@docs
+PhotometricFilters.get_metadata
+```
 
 ## Index
 
