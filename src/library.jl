@@ -1,4 +1,4 @@
-using HDF5
+import HDF5
 using Unitful
 
 const PYPHOT_DATADEP = DataDep(
@@ -10,17 +10,17 @@ const PYPHOT_DATADEP = DataDep(
 
 function read_filter(name::AbstractString, units=true)
     local wave, through, dtype, fname
-    h5open(datadep"filters/new_filters.hd5") do fh
+    HDF5.h5open(datadep"filters/new_filters.hd5") do fh
         node = fh["filters/$name"]
         data = read(node)
         wave = map(i -> i.WAVELENGTH, data)
         if units
-            unitstr = read(attributes(node)["WAVELENGTH_UNIT"])
+            unitstr = read(HDF5.attributes(node)["WAVELENGTH_UNIT"])
             wave *= parse_unit(unitstr)
         end
         through = map(i -> i.THROUGHPUT, data)
-        dtype = read(attributes(node)["DETECTOR"])
-        fname = read(attributes(node)["NAME"])
+        dtype = read(HDF5.attributes(node)["DETECTOR"])
+        fname = read(HDF5.attributes(node)["NAME"])
     end
     D = parse(DetectorType, dtype)
     return PhotometricFilter(wave, through; detector=D, name=fname)

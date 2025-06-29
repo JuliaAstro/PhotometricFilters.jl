@@ -1,10 +1,10 @@
 module PhotometricFilters
 
-using DataDeps
-using DelimitedFiles
+using DataDeps: register, DataDep, @datadep_str
 
 export PhotometricFilter,
        get_filter,
+       query_filters,
        wave, 
        throughput, 
        apply, 
