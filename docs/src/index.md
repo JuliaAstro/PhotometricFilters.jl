@@ -55,6 +55,7 @@ apply!
 
 ### Statistics
 ```@docs
+PhotometricFilters.mean_wavelength
 PhotometricFilters.central_wavelength
 PhotometricFilters.effective_wavelength
 PhotometricFilters.pivot_wavelength
