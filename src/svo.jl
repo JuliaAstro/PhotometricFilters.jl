@@ -32,13 +32,14 @@ julia> filt = get_filter("2MASS/2MASS.J", :Vega);
 
 julia> filt[1]
 107-element PhotometricFilter{Float64}: 2MASS/2MASS.J
- min. wave.: 10820.0 Å
- max. wave.: 14060.0 Å
+ min. wave.: 10806.470589792389 Å
+ max. wave.: 14067.974683578484 Å
  effective wave.: 12285.654731403807 Å
- central wave.: 12410.5170694321 Å
+ mean wave.: 12410.5170694321 Å
+ central wave.: 12390.584132888223 Å
  pivot wave.: 12358.089456559974 Å
  eff. width: 1624.3245065600008 Å
- fwhm: 2170.0 Å
+ fwhm: 2149.1445403830403 Å
 
 julia> filt[2] isa AbstractDict
 true
