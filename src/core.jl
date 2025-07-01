@@ -52,10 +52,11 @@ julia> f = PhotometricFilter(1000:2000, vcat(fill(0.25, 250), fill(0.5, 500), fi
  min. wave.: 1000 Å
  max. wave.: 2000 Å
  effective wave.: 1603.6927025575474 Å
- central wave.: 1499.8333333333333 Å
+ mean wave.: 1499.8333333333333 Å
+ central wave.: 1499.5 Å
  pivot wave.: 1478.1028279485677 Å
  eff. width: 750.0 Å
- fwhm: 500 Å
+ fwhm: 501.0 Å
 
 julia> f == PhotometricFilter(uconvert.(Unitful.nm, wave(f)), throughput(f)) # Can also specify wavelength argument with Unitful units
 true
@@ -92,6 +93,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter{T}) where T
     println(io, " min. wave.: ", min_wave(f))
     println(io, " max. wave.: ", max_wave(f))
     println(io, " effective wave.: ", effective_wavelength(f))
+    println(io, " mean wave.: ", mean_wavelength(f))
     println(io, " central wave.: ", central_wavelength(f))
     println(io, " pivot wave.: ", pivot_wavelength(f))
     println(io, " eff. width: ", width(f))
@@ -159,19 +161,50 @@ end
 
 
 """
-    central_wavelength(f::PhotometricFilter)
+    mean_wavelength(f::PhotometricFilter)
 
-Returns the central wavelength of the filter `f`, defined as
+Returns the mean wavelength of the filter `f`, defined as
 
 ```math
 \\frac{\\int \\lambda \\, T(\\lambda) \\, d\\lambda}{\\int T(\\lambda) \\, d\\lambda}
 ```
 """
-function central_wavelength(f::PhotometricFilter)
+function mean_wavelength(f::PhotometricFilter)
     wl = wave(f)
     norm = trapz(wl, throughput(f))
     lt = trapz(wl, wl .* throughput(f))
     return  lt / norm
+end
+
+"""
+    central_wavelength(f::PhotometricFilter)
+
+Returns the central wavelength of the filter `f`, defined as the central wavelength between the two wavelengths used for the FWHM ([`fwhm`](@ref)).
+"""
+function central_wavelength(f::PhotometricFilter)
+    y = throughput(f)
+    wl = wave(f)
+    thresh = maximum(y) / 2
+
+    # lower FWHM wavelength
+    idx_low = findfirst(>(thresh), y)
+    if idx_low == firstindex(y)
+        wl_low = wl[idx_low]
+    else
+        frac_low = (thresh - y[idx_low-1]) / (y[idx_low] - y[idx_low-1])
+        wl_low = frac_low * wl[idx_low] + (1 - frac_low) * wl[idx_low-1]
+    end
+
+    # upper FWHM wavelength
+    idx_high = findlast(>(thresh), y)
+    if idx_high == lastindex(y)
+        wl_high = wl[idx_high]
+    else
+        frac_high = (thresh - y[idx_high+1]) / (y[idx_high] - y[idx_high+1])
+        wl_high = frac_high * wl[idx_high] + (1 - frac_high) * wl[idx_high+1]
+    end
+
+    return (wl_low + wl_high) / 2
 end
 
 """
@@ -181,8 +214,14 @@ Returns the shortest wavelength at which the filter transmission is equal to `le
 """
 function min_wave(f::PhotometricFilter; level=0.01)
     y = throughput(f)
-    idx = findfirst(q -> q / maximum(y) > level, y)
-    return wave(f)[idx]
+    wl = wave(f)
+    thresh = level * maximum(y)
+    idx = findfirst(>(thresh), y)
+    if idx == firstindex(y)
+        return wl[idx]
+    end
+    frac = (thresh - y[idx-1]) / (y[idx] - y[idx-1])
+    return frac * wl[idx] + (1 - frac) * wl[idx-1]
 end
 
 """
@@ -192,8 +231,14 @@ Returns the longest wavelength at which the filter transmission is equal to `lev
 """
 function max_wave(f::PhotometricFilter; level=0.01)
     y = throughput(f)
-    idx = findlast(q -> q / maximum(y) > level, y)
-    return wave(f)[idx]
+    wl = wave(f)
+    thresh = level * maximum(y)
+    idx = findlast(>(thresh), y)
+    if idx == lastindex(y)
+        return wl[idx]
+    end
+    frac = (thresh - y[idx+1]) / (y[idx] - y[idx+1])
+    return frac * wl[idx] + (1 - frac) * wl[idx+1]
 end
 
 """
@@ -202,10 +247,29 @@ end
 Returns the difference between the furthest two wavelengths for which the filter transmission is equal to half its maximum value.
 """
 function fwhm(f::PhotometricFilter)
-    Δ = diff(sign.(f ./ maximum(f) .- 1//2))
-    nonzeros = findall(!iszero, Δ)
-    i1, i2 = first(nonzeros), last(nonzeros)
-    return wave(f)[i2] - wave(f)[i1]
+    y = throughput(f)
+    wl = wave(f)
+    thresh = maximum(y) / 2
+
+    # lower FWHM wavelength
+    idx_low = findfirst(>(thresh), y)
+    if idx_low == firstindex(y)
+        wl_low = wl[idx_low]
+    else
+        frac_low = (thresh - y[idx_low-1]) / (y[idx_low] - y[idx_low-1])
+        wl_low = frac_low * wl[idx_low] + (1 - frac_low) * wl[idx_low-1]
+    end
+
+    # upper FWHM wavelength
+    idx_high = findlast(>(thresh), y)
+    if idx_high == lastindex(y)
+        wl_high = wl[idx_high]
+    else
+        frac_high = (thresh - y[idx_high+1]) / (y[idx_high] - y[idx_high+1])
+        wl_high = frac_high * wl[idx_high] + (1 - frac_high) * wl[idx_high+1]
+    end
+
+    return wl_high - wl_low
 end
 
 """
