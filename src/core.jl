@@ -4,6 +4,10 @@ using Unitful
 
 abstract type AbstractFilter{T} <: AbstractVector{T} end
 
+# Generic methods for all AbstractFilter
+Base.getindex(f::AbstractFilter, i::Int) = (wave(f)[i], throughput(f)[i])
+Base.size(f::AbstractFilter) = size(throughput(f))
+
 abstract type DetectorType end
 struct Photon <: DetectorType end
 struct Energy <: DetectorType end
@@ -32,8 +36,8 @@ end
 const wave_unit = Unitful.angstrom
 
 # Dispatch method for PhotometricFilter constructor
-_convert_wave(w) = w
-_convert_wave(w::Unitful.Length) = ustrip(wave_unit, w)
+_convert_wave(w) = w * wave_unit
+_convert_wave(w::Unitful.Length) = unconvert(wave_unit, w)
 _convert_wave(w::Quantity) = throw(ArgumentError("Provided wavelengths have incompatible dimensions -- expected length (𝐋), received $(dimension(w))."))
 
 """
@@ -83,8 +87,6 @@ function PhotometricFilter(wave::AbstractVector, throughput::AbstractVector{T};
     return PhotometricFilter(wv, throughput, detector, name, etp)
 end
 
-Base.getindex(f::PhotometricFilter, idx...) = throughput(f)[idx...]
-
 Base.show(io::IO, f::PhotometricFilter) = print(io, f.name)
 
 function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter{T}) where T
@@ -100,17 +102,15 @@ function Base.show(io::IO, ::MIME"text/plain", f::PhotometricFilter{T}) where T
     print(io,   " fwhm: ", fwhm(f))
 end
 
-wave(f::PhotometricFilter) = f.wave .* wave_unit
+wave(f::PhotometricFilter) = f.wave
 throughput(f::PhotometricFilter) = f.throughput
 
 (f::PhotometricFilter)(wave) = f.etp(wave)
 
 function (f::PhotometricFilter)(wave::Q) where Q <: Unitful.Length
-    wl = ustrip.(wave_unit, wave)
+    wl = uconvert.(wave_unit, wave)
     return f(wl)
 end
-
-Base.size(f::PhotometricFilter) = size(throughput(f))
 
 """
     effective_wavelength(f::PhotometricFilter)
