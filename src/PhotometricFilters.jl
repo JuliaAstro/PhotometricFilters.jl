@@ -6,7 +6,9 @@ export PhotometricFilter,
        get_filter,
        query_filters,
        wave, 
-       throughput, 
+       throughput,
+       detector_type,
+       name,
        apply, 
        apply!
 

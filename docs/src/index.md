@@ -8,7 +8,9 @@ This package provides access to, and operations on, photometric filter curves. S
 
 ## Types
 
-We use the [`PhotometricFilter`](@ref) type to represent photometric filters in this package.
+All photometric filter types should be subtypes of the [`AbstractFilter`](@ref PhotometricFilters.AbstractFilter) type. We define a minimal API that should be followed so that new types can make use of the generic filter operations we define.
+
+The simplest concrete filter type we provide to represent photometric filters is [`PhotometricFilter`](@ref).
 
 ```@docs
 PhotometricFilter
@@ -31,10 +33,11 @@ using PhotometricFilters: SDSS_u, SDSS_g, SDSS_r, SDSS_i, SDSS_z, fwhm
 filts = [SDSS_u(), SDSS_g(), SDSS_r(), SDSS_i(), SDSS_z()]
 ```
 
-**NOTE THAT THESE INCLUDED FILTER CURVES ARE NOT GUARANTEED TO BE UP-TO-DATE.** If you are using a filter/instrument that may have recently had its filter curves updated (e.g., JWST/NIRCAM), you should use our SVO query interface to make sure you get the most up-to-date filter curves. If you know the SVO-designated name of the filter you want, you can use [`get_filter`](@ref) to retrieve its transmission data, which returns an instance of [`PhotometricFilter`](@ref).
+**NOTE THAT THESE INCLUDED FILTER CURVES ARE NOT GUARANTEED TO BE UP-TO-DATE.** If you are using a filter/instrument that may have recently had its filter curves updated (e.g., JWST/NIRCAM), you should use our SVO query interface to make sure you get the most up-to-date filter curves. SVO also provides additional metadata that is useful for some applications (e.g., filter zeropoints). If you know the SVO-designated name of the filter you want, you can use [`get_filter`](@ref) to retrieve its transmission data, which returns an instance of [`SVOFilter`](@ref PhotometricFilters.SVOFilter).
 
 ```@docs
 get_filter
+PhotometricFilters.SVOFilter
 ```
 
 If you'd like to perform a search on the filters available through the SVO filter service, you can use [`query_filters`](@ref).
@@ -45,6 +48,14 @@ query_filters
 
 ## Supported Operations
 We include functions for performing many common operations on photometric filters, summarized below.
+
+### Accessors
+```@docs
+name
+wave
+throughput
+detector_type
+```
 
 ### Applying Filter Curves to Spectra
 
@@ -65,8 +76,9 @@ PhotometricFilters.fwhm
 PhotometricFilters.width
 ```
 
-## Internal Functions
+## Internals
 ```@docs
+PhotometricFilters.AbstractFilter
 PhotometricFilters.get_metadata
 ```
 

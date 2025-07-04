@@ -1,14 +1,58 @@
 import DataFrames: DataFrame
 import HTTP
-using OrderedCollections: OrderedDict
+import OrderedCollections: OrderedDict
 using Unitful: uparse, ustrip, NoUnits
 import UnitfulAstro
 using XML: Node, LazyNode, children, simple_value, attributes, tag, next
 import VOTables
 
 const svo_url = "http://svo2.cab.inta-csic.es/theory/fps/fps.php"
-const detector_type = (Energy(), Photon()) # SVO returns 0 or 1 for energy or photon
+const detector_types = (Energy(), Photon()) # SVO returns 0 or 1 for energy or photon
 const TYPE_VO_TO_JL = VOTables.TYPE_VO_TO_JL
+
+"""
+    SVOFilter(filter::PhotometricFilter, metadata) <: AbstractFilter
+Type for containing the photometric filter information returned by the SVO filter service. A result of this type is returned by [`get_filter`](@ref). Contains two fields:
+ - `filter` is a [`PhotometricFilter`](@ref) type that is used to support common operations.
+ - `metadata` is a dictionary (currently an `OrderedCollections.OrderedDict`) that contains the metadata returned by SVO.
+These fields are considered internal (subject to change) and users should interact with instances of this type via the public accessor methods instead. Example usage is below.
+```jldoctest
+julia> using PhotometricFilters: get_filter, SVOFilter, PhotometricFilter
+
+julia> filt = get_filter("2MASS/2MASS.J", :Vega);
+
+julia> filt isa SVOFilter
+true
+
+julia> PhotometricFilter(filt) isa PhotometricFilter # Access simpler PhotometricFilter type
+true
+
+julia> Dict(filt) isa Dict # Retrieve full metadata dictionary
+true
+
+julia> filt["ZeroPoint"] # Can retrieve metadata directly
+1594.0 Jy
+
+julia> name(filt) # `name`, `detector_type`, `wave`, `throughput` all work
+"2MASS/2MASS.J"
+```
+"""
+struct SVOFilter{T <: PhotometricFilter, S} <: AbstractFilter{T}
+    filter::T   # Encapsulate a PhotometricFilter
+    metadata::S # Preserve metadata
+end
+PhotometricFilter(f::SVOFilter) = f.filter
+OrderedDict(f::SVOFilter) = f.metadata
+Base.Dict(f::SVOFilter) = Dict(OrderedDict(f))
+for f in (:name, :detector_type, :wave, :throughput)
+    @eval $f(x::SVOFilter) = $f(PhotometricFilter(x))
+end
+(f::SVOFilter)(wave) = PhotometricFilter(f)(wave)
+Base.getindex(f::SVOFilter, i::AbstractString) = getindex(f.metadata, i)
+Base.haskey(f::SVOFilter, key) = haskey(f.metadata, key)
+Base.keys(f::SVOFilter) = keys(f.metadata)
+Base.values(f::SVOFilter) = values(f.metadata)
+
 
 """
     get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
@@ -20,18 +64,14 @@ Query the online [SVO filter service](http://svo2.cab.inta-csic.es/theory/fps) f
  - `magsys::Symbol`: Desired magnitude system for associated metadata (e.g., `"ZeroPoint"`). Can be any of `(:AB, :Vega, :ST)`. SVO uses Vega by default, so we mirror that choice here.
 
  # Returns
- A length-2 tuple, with elements
-  1. a [`PhotometricFilter`](@ref) containing the transmission data of the filter.
-  2. a dictionary containing additional metadata provided by SVO.
+An [`SVOFilter`](@ref PhotometricFilters.SVOFilter) instance containing the results of the query.
 
 # Examples
 ```jldoctest
 julia> using PhotometricFilters: get_filter
 
-julia> filt = get_filter("2MASS/2MASS.J", :Vega);
-
-julia> filt[1]
-107-element PhotometricFilter{Float64}: 2MASS/2MASS.J
+julia> filt = get_filter("2MASS/2MASS.J", :Vega)
+107-element PhotometricFilters.SVOFilter{PhotometricFilter{Float64}}: 2MASS/2MASS.J
  min. wave.: 10806.470589792389 Å
  max. wave.: 14067.974683578484 Å
  effective wave.: 12285.654731403807 Å
@@ -40,12 +80,6 @@ julia> filt[1]
  pivot wave.: 12358.089456559974 Å
  eff. width: 1624.3245065600008 Å
  fwhm: 2149.1445403830403 Å
-
-julia> filt[2] isa AbstractDict
-true
-
-julia> filt[2]["ZeroPoint"]
-1594.0 Jy
 ```
 """
 function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
@@ -91,9 +125,9 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
     table = VOTables.read(IOBuffer(response.body); unitful=true)
     result = PhotometricFilter(table.Wavelength,
                                Vector(table.Transmission);
-                               detector=detector_type[parse(Int, d["DetectorType"]) + 1],
+                               detector=detector_types[parse(Int, d["DetectorType"]) + 1],
                                name=filtername)
-    return result, d
+    return SVOFilter(result, d)
 end
 
 """
@@ -210,6 +244,8 @@ The filter information and transmission data can be obtained by calling [`get_fi
 
 # Examples
 ```jldoctest
+julia> using PhotometricFilters: query_filters, SVOFilter
+
 julia> using DataFrames: DataFrame
 
 julia> df = query_filters(; Facility="SLOAN", WavelengthEff=(1000, 5000));
@@ -220,7 +256,7 @@ true
 julia> id = df.filterID[3]
 "SLOAN/SDSS.g"
 
-julia> get_filter(id)[1] isa PhotometricFilter
+julia> get_filter(id) isa SVOFilter
 true
 ```
 
