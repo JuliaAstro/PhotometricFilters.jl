@@ -6,9 +6,14 @@ export PhotometricFilter,
        get_filter,
        query_filters,
        wave, 
-       throughput, 
+       throughput,
+       detector_type,
+       name,
        apply, 
-       apply!
+       apply!,
+       integrate,
+       F_nu,
+       F_lambda
 
 include("core.jl") # types and base utilities (like size, length)
 include("library.jl") # the library of filters
