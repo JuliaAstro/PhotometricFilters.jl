@@ -1,8 +1,8 @@
 import DataFrames: DataFrame
 import HTTP
 import OrderedCollections: OrderedDict
-using Unitful: uparse, ustrip, NoUnits
-import UnitfulAstro
+# using Unitful: uparse, ustrip, NoUnits
+# import UnitfulAstro
 using XML: Node, LazyNode, children, simple_value, attributes, tag, next
 import VOTables
 

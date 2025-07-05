@@ -1,6 +1,7 @@
 using Interpolations: linear_interpolation, deduplicate_knots!
 using Trapz: trapz
 using Unitful
+using UnitfulAstro
 
 """Default unit for wavelengths."""
 const wave_unit = Unitful.angstrom
