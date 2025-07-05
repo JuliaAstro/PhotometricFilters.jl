@@ -62,6 +62,9 @@ detector_type
 ```@docs
 apply
 apply!
+integrate
+F_nu
+F_lambda
 ```
 
 ### Statistics

@@ -323,6 +323,64 @@ function apply!(filt::AbstractFilter, wave, flux, out)
     return out
 end
 
+"""
+    integrate(filt::AbstractFilter, wave, flux)
+Returns the mean flux density of a spectrum (defined by wavelengths `wave` and fluxes `flux`) when integrated over the provided filter `filt`.
+
+For photon counting detectors, this is
+
+```math
+\\overline{f_\\lambda} = \\frac{\\int_\\lambda \\lambda \\, f_\\lambda \\, T(\\lambda) \\, d\\lambda}{\\int_\\lambda \\lambda \\, T(\\lambda) \\, d\\lambda}
+```
+
+which can also be interpreted as the mean photon rate density, while for energy counting detectors, this is
+
+```math
+\\overline{f_\\lambda} = \\frac{\\int_\\lambda f_\\lambda \\, T(\\lambda) \\, d\\lambda}{\\int_\\lambda T(\\lambda) \\, d\\lambda}
+```
+
+which is essentially just the mean flux weighted by the filter throughput.
+"""
+function integrate(wave, flux, throughput, ::Energy)
+    return trapz(wave, flux .* throughput) / trapz(wave, throughput)
+end
+function integrate(wave, flux, throughput, ::Photon)
+    t1 = wave .* throughput
+    return trapz(wave, flux .* t1) / trapz(wave, t1)
+end
+function integrate(filt::AbstractFilter, wave, flux)
+    return integrate(wave, flux, filt.(wave), detector_type(filt))
+end
+@derived_dimension SpectralFluxDensity Unitful.𝐌 / Unitful.𝐋 / Unitful.𝐓^3
+@derived_dimension SpectralEnergyDensity Unitful.𝐌 / Unitful.𝐓^2
+"""
+    F_nu(F_lambda::SpectralFluxDensity, λpivot)
+    F_nu(F_lambda::SpectralFluxDensity, f::AbstractFilter)
+Convert a spectral flux density `F_lambda` into a spectral energy density. Assuming `F_lambda` in *erg / s / cm^2 / Angstrom*, and `F_nu` in *Jy*, this conversion is
+
+```math
+F_\\nu = \\frac{10^5}{10^{-8} \\, c} \\, \\lambda^2_p \\, F_\\lambda
+```
+
+where ``c`` is the speed of light in *m/s* and ``\\lambda_p`` is the pivot wavelength (`λpivot`) in *Angstroms*. If providing an [`AbstractFilter`](@ref PhotometricFilters.AbstractFilter) as the second argument, the pivot wavelength will be automatically computed with [`pivot_wavelength`](@ref PhotometricFilters.pivot_wavelength).
+"""
+F_nu(Fλ::SpectralFluxDensity, λpivot) = inv(2.9979246) * 1e5 * _ustrip(u"angstrom", λpivot)^2 * ustrip(u"erg/s/cm^2/angstrom", Fλ) * u"Jy"
+F_nu(Fλ::SpectralFluxDensity, f::AbstractFilter) = F_nu(Fλ, pivot_wavelength(f))
+
+"""
+    F_lambda(F_nu::SpectralEnergyDensity, λpivot)
+    F_lambda(F_nu::SpectralEnergyDensity, f::AbstractFilter)
+Convert a spectral energy density `F_nu` into a spectral flux density. Assuming `F_nu` in *Jy* and `F_lambda` in *erg / s / cm^2 / Angstrom*, this conversion is
+
+```math
+F_\\lambda = \\frac{10^{-8} \\, c}{10^5} \\, \\lambda^{-2}_p \\, F_\\nu
+```
+
+where ``c`` is the speed of light in *m/s* and ``\\lambda_p`` is the pivot wavelength (`λpivot`) in *Angstroms*. If providing an [`AbstractFilter`](@ref PhotometricFilters.AbstractFilter) as the second argument, the pivot wavelength will be automatically computed with [`pivot_wavelength`](@ref PhotometricFilters.pivot_wavelength).
+"""
+F_lambda(F_nu::SpectralEnergyDensity, λpivot) = 2.9979246 / 1e5 / _ustrip(u"angstrom", λpivot)^2 * ustrip(u"Jy", F_nu) * u"erg/s/cm^2/angstrom"
+F_lambda(F_nu::SpectralEnergyDensity, f::AbstractFilter) = F_lambda(F_nu, pivot_wavelength(f))
+
 ############################################################
 # Definition and methods for PhotometricFilter concrete type
 
