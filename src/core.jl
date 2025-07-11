@@ -365,7 +365,7 @@ F_\\nu = \\frac{10^5}{10^{-8} \\, c} \\, \\lambda^2_p \\, F_\\lambda
 
 where ``c`` is the speed of light in *m/s* and ``\\lambda_p`` is the pivot wavelength (`λpivot`) in *Angstroms*. If providing an [`AbstractFilter`](@ref PhotometricFilters.AbstractFilter) as the second argument, the pivot wavelength will be automatically computed with [`pivot_wavelength`](@ref PhotometricFilters.pivot_wavelength).
 """
-F_nu(Fλ::SpectralFluxDensity, λpivot) = 25370985150//760603 * _ustrip(u"angstrom", λpivot)^2 * ustrip(u"erg/s/cm^2/angstrom", Fλ) * u"Jy" # Prefactor is 1e5 / (2.99792458 / 10^8), see PR #22
+F_nu(Fλ::SpectralFluxDensity, λpivot) = 25370985150//760603 * _ustrip(u"angstrom", λpivot)^2 * ustrip(u"erg/s/cm^2/angstrom", Fλ) * u"Jy" # Prefactor is 1e5 / (c / 10^8), c = 2.99792458e8 m s^-1, see PR #22
 F_nu(Fλ::SpectralFluxDensity, f::AbstractFilter) = F_nu(Fλ, pivot_wavelength(f))
 
 """
@@ -379,7 +379,7 @@ F_\\lambda = \\frac{10^{-8} \\, c}{10^5} \\, \\lambda^{-2}_p \\, F_\\nu
 
 where ``c`` is the speed of light in *m/s* and ``\\lambda_p`` is the pivot wavelength (`λpivot`) in *Angstroms*. If providing an [`AbstractFilter`](@ref PhotometricFilters.AbstractFilter) as the second argument, the pivot wavelength will be automatically computed with [`pivot_wavelength`](@ref PhotometricFilters.pivot_wavelength).
 """
-F_lambda(F_nu::SpectralEnergyDensity, λpivot) = 760603//25370985150 / _ustrip(u"angstrom", λpivot)^2 * ustrip(u"Jy", F_nu) * u"erg/s/cm^2/angstrom" # Prefactor is (2.99792458 / 10^8) / 1e5, see PR #22
+F_lambda(F_nu::SpectralEnergyDensity, λpivot) = 760603//25370985150 / _ustrip(u"angstrom", λpivot)^2 * ustrip(u"Jy", F_nu) * u"erg/s/cm^2/angstrom" # Prefactor is (c / 10^8) / 1e5, c = 2.99792458e8 m s^-1, see PR #22
 F_lambda(F_nu::SpectralEnergyDensity, f::AbstractFilter) = F_lambda(F_nu, pivot_wavelength(f))
 
 ############################################################
