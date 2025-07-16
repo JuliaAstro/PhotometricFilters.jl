@@ -27,7 +27,7 @@ function Base.parse(::Type{DetectorType}, s::AbstractString)
 end
 
 """
-    AbstractFilter{T} <: AbstractVector{T}
+    AbstractFilter{T}
 Abstract supertype for representing photometric filters. Most functions provided by this package (e.g., [`effective_wavelength`](@ref PhotometricFilters.effective_wavelength) and similar methods) are designed to work with any subtype of `AbstractFilter` so long as a minimal API is defined for new subtypes. The methods that should be implemented for new types to conform to this API are summarized below:
 
  - [`name(f::NewType)`](@ref name) should return a string indicating a human-readable name for the filter (e.g., "SDSS_u").
@@ -37,12 +37,20 @@ Abstract supertype for representing photometric filters. Most functions provided
 
 Additionally, all subtypes should support filter interpolation at user-defined wavelengths with a call signature `(f::NewType)(wavelengths)`. To support this, new types should implement a method like `(f::PhotometricFilter)(wave::Q) where Q <: Unitful.Length`. A generic fallback for inputs without units is already defined.
 """
-abstract type AbstractFilter{T} <: AbstractVector{T} end
+abstract type AbstractFilter{T} end
 
 # Generic methods for all AbstractFilter
 # Methods to implement AbstractVector interface
 Base.getindex(f::AbstractFilter, i::Int) = (wave(f)[i], throughput(f)[i])
+Base.length(f::AbstractFilter) = length(throughput(f))
 Base.size(f::AbstractFilter) = size(throughput(f))
+Base.firstindex(f::AbstractFilter) = firstindex(throughput(f))
+Base.lastindex(f::AbstractFilter) = lastindex(throughput(f))
+Base.eltype(f::AbstractFilter) = Tuple{eltype(wave(f)), eltype(throughput(f))}
+function Base.iterate(f::AbstractFilter, state=0)
+    state == length(f) && return nothing
+    return f[begin + state], state + 1
+end
 # Interpolation should be a generic feature of all AbstractFilter
 # Concrete subtypes should implement (f::NewType)(wave::Q) where Q <: Unitful.Length
 (f::AbstractFilter)(wave) = @. f(wave * wave_unit)
