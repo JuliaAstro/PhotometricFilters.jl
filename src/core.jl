@@ -51,6 +51,7 @@ function Base.iterate(f::AbstractFilter, state=0)
     state == length(f) && return nothing
     return f[begin + state], state + 1
 end
+Base.:(==)(f1::AbstractFilter, f2::AbstractFilter) = wave(f1) == wave(f2) && throughput(f1) == throughput(f2)
 # Interpolation should be a generic feature of all AbstractFilter
 # Concrete subtypes should implement (f::NewType)(wave::Q) where Q <: Unitful.Length
 (f::AbstractFilter)(wave) = @. f(wave * wave_unit)
