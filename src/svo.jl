@@ -53,6 +53,8 @@ Base.haskey(f::SVOFilter, key) = haskey(f.metadata, key)
 Base.keys(f::SVOFilter) = keys(f.metadata)
 Base.values(f::SVOFilter) = values(f.metadata)
 
+reference_wavelength(f::SVOFilter) = haskey(f, "WavelengthRef") ? f["WavelengthRef"] : @invoke reference_wavelength(f::AbstractFilter)
+
 
 """
     get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
@@ -72,6 +74,7 @@ julia> using PhotometricFilters: get_filter
 
 julia> filt = get_filter("2MASS/2MASS.J", :Vega)
 107-element PhotometricFilters.SVOFilter{PhotometricFilter{Float64}}: 2MASS/2MASS.J
+ reference wave.: 12350.0 Å
  min. wave.: 10806.470589792389 Å
  max. wave.: 14067.974683578484 Å
  effective wave.: 12285.654731403807 Å

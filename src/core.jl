@@ -62,6 +62,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::T) where T <: AbstractFilter
     # println(io, "$N-element $T: ", name(f))
     s1 = split(string(T), ",")[1]
     println(io, "$N-element $(s1 * repeat("}", count("{", s1))): ", name(f))
+    println(io, " reference wave.: ", reference_wavelength(f))
     println(io, " min. wave.: ", min_wave(f))
     println(io, " max. wave.: ", max_wave(f))
     println(io, " effective wave.: ", effective_wavelength(f))
@@ -169,6 +170,15 @@ function pivot_wavelength(f::AbstractFilter, ::Photon)
     lp2 = norm / trapz(wl, y)
     return sqrt(lp2)
 end
+
+"""
+    reference_wavelength(f::AbstractFilter)
+
+Returns the reference wavelength of the filter `f`, used for conversions of the flux and for determination of magnitudes.
+
+By default the pivot wavelength is returned ([`pivot_wavelength`](@ref)), but filter providers sometimes provide their own specified values.
+"""
+reference_wavelength(f::AbstractFilter) = pivot_wavelength(f)
 
 """
     mean_wavelength(f::AbstractFilter)
@@ -364,32 +374,32 @@ end
 @derived_dimension SpectralFluxDensity Unitful.𝐌 / Unitful.𝐋 / Unitful.𝐓^3
 @derived_dimension SpectralEnergyDensity Unitful.𝐌 / Unitful.𝐓^2
 """
-    F_nu(F_lambda::SpectralFluxDensity, λpivot)
+    F_nu(F_lambda::SpectralFluxDensity, λref)
     F_nu(F_lambda::SpectralFluxDensity, f::AbstractFilter)
 Convert a spectral flux density `F_lambda` into a spectral energy density. Assuming `F_lambda` in *erg / s / cm^2 / Angstrom*, and `F_nu` in *Jy*, this conversion is
 
 ```math
-F_\\nu = \\frac{10^5}{10^{-8} \\, c} \\, \\lambda^2_p \\, F_\\lambda
+F_\\nu = \\frac{10^5}{10^{-8} \\, c} \\, \\lambda^2_r \\, F_\\lambda
 ```
 
-where ``c`` is the speed of light in *m/s* and ``\\lambda_p`` is the pivot wavelength (`λpivot`) in *Angstroms*. If providing an [`AbstractFilter`](@ref PhotometricFilters.AbstractFilter) as the second argument, the pivot wavelength will be automatically computed with [`pivot_wavelength`](@ref PhotometricFilters.pivot_wavelength).
+where ``c`` is the speed of light in *m/s* and ``\\lambda_r`` is the reference wavelength (`λref`) in *Angstroms*. If providing an [`AbstractFilter`](@ref PhotometricFilters.AbstractFilter) as the second argument, the reference wavelength will be automatically computed with [`reference_wavelength`](@ref PhotometricFilters.reference_wavelength).
 """
-F_nu(Fλ::SpectralFluxDensity, λpivot) = 25370985150//760603 * _ustrip(u"angstrom", λpivot)^2 * ustrip(u"erg/s/cm^2/angstrom", Fλ) * u"Jy" # Prefactor is 1e5 / (c / 10^8), c = 2.99792458e8 m s^-1, see PR #22
-F_nu(Fλ::SpectralFluxDensity, f::AbstractFilter) = F_nu(Fλ, pivot_wavelength(f))
+F_nu(Fλ::SpectralFluxDensity, λref) = 25370985150//760603 * _ustrip(u"angstrom", λref)^2 * ustrip(u"erg/s/cm^2/angstrom", Fλ) * u"Jy" # Prefactor is 1e5 / (c / 10^8), c = 2.99792458e8 m s^-1, see PR #22
+F_nu(Fλ::SpectralFluxDensity, f::AbstractFilter) = F_nu(Fλ, reference_wavelength(f))
 
 """
-    F_lambda(F_nu::SpectralEnergyDensity, λpivot)
+    F_lambda(F_nu::SpectralEnergyDensity, λref)
     F_lambda(F_nu::SpectralEnergyDensity, f::AbstractFilter)
 Convert a spectral energy density `F_nu` into a spectral flux density. Assuming `F_nu` in *Jy* and `F_lambda` in *erg / s / cm^2 / Angstrom*, this conversion is
 
 ```math
-F_\\lambda = \\frac{10^{-8} \\, c}{10^5} \\, \\lambda^{-2}_p \\, F_\\nu
+F_\\lambda = \\frac{10^{-8} \\, c}{10^5} \\, \\lambda^{-2}_r \\, F_\\nu
 ```
 
-where ``c`` is the speed of light in *m/s* and ``\\lambda_p`` is the pivot wavelength (`λpivot`) in *Angstroms*. If providing an [`AbstractFilter`](@ref PhotometricFilters.AbstractFilter) as the second argument, the pivot wavelength will be automatically computed with [`pivot_wavelength`](@ref PhotometricFilters.pivot_wavelength).
+where ``c`` is the speed of light in *m/s* and ``\\lambda_r`` is the reference wavelength (`λref`) in *Angstroms*. If providing an [`AbstractFilter`](@ref PhotometricFilters.AbstractFilter) as the second argument, the reference wavelength will be automatically computed with [`reference_wavelength`](@ref PhotometricFilters.reference_wavelength).
 """
-F_lambda(F_nu::SpectralEnergyDensity, λpivot) = 760603//25370985150 / _ustrip(u"angstrom", λpivot)^2 * ustrip(u"Jy", F_nu) * u"erg/s/cm^2/angstrom" # Prefactor is (c / 10^8) / 1e5, c = 2.99792458e8 m s^-1, see PR #22
-F_lambda(F_nu::SpectralEnergyDensity, f::AbstractFilter) = F_lambda(F_nu, pivot_wavelength(f))
+F_lambda(F_nu::SpectralEnergyDensity, λref) = 760603//25370985150 / _ustrip(u"angstrom", λref)^2 * ustrip(u"Jy", F_nu) * u"erg/s/cm^2/angstrom" # Prefactor is (c / 10^8) / 1e5, c = 2.99792458e8 m s^-1, see PR #22
+F_lambda(F_nu::SpectralEnergyDensity, f::AbstractFilter) = F_lambda(F_nu, reference_wavelength(f))
 
 ############################################################
 # Definition and methods for PhotometricFilter concrete type
@@ -416,6 +426,7 @@ julia> using Unitful
 
 julia> f = PhotometricFilter(1000:2000, vcat(fill(0.25, 250), fill(0.5, 500), fill(0.25, 251))) # Specify only wavelength and throughput
 1001-element PhotometricFilter{Float64}: nothing
+ reference wave.: 1478.1028279485677 Å
  min. wave.: 1000 Å
  max. wave.: 2000 Å
  effective wave.: 1603.6927025575474 Å

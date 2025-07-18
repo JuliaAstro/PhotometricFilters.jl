@@ -69,6 +69,7 @@ F_lambda
 
 ### Statistics
 ```@docs
+PhotometricFilters.reference_wavelength
 PhotometricFilters.mean_wavelength
 PhotometricFilters.central_wavelength
 PhotometricFilters.effective_wavelength
