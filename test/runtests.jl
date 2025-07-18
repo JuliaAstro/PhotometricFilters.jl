@@ -6,6 +6,7 @@ using Documenter: DocMeta, doctest
 DocMeta.setdocmeta!(PhotometricFilters, :DocTestSetup, :(using PhotometricFilters); recursive=true)
 doctest(PhotometricFilters)
 
-@testset "PhotometricFilters.jl" begin
+@testset verbose=true "PhotometricFilters.jl" begin
     @safetestset "Library" include("library_tests.jl")
+    @safetestset "Iteration" include("iteration_tests.jl")
 end
