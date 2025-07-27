@@ -51,7 +51,7 @@ We include functions for performing many common operations on photometric filter
 
 ### Accessors
 ```@docs
-name
+filtername
 wave
 throughput
 detector_type

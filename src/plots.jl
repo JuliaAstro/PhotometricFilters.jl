@@ -1,7 +1,7 @@
 using RecipesBase
 
 @recipe function f(filt::PhotometricFilter)
-    label --> filt.name
+    label --> filtername(filt)
     yguide --> "throughput"
     xguide --> "wavelength"
 
@@ -14,7 +14,7 @@ end
 
     for filt in filts
         @series begin
-            label --> filt.name
+            label --> filtername(filt)
             wave(filt), throughput(filt)
         end
     end

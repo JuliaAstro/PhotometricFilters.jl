@@ -23,7 +23,7 @@ function read_filter(name::AbstractString, units=true)
         fname = read(HDF5.attributes(node)["NAME"])
     end
     D = parse(DetectorType, dtype)
-    return PhotometricFilter(wave, through; detector=D, name=fname)
+    return PhotometricFilter(wave, through; detector=D, filtername=fname)
 end
 
 function parse_unit(unitstr::AbstractString)
