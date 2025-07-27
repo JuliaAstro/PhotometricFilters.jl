@@ -8,13 +8,13 @@ const VEGA_DATADEP = DataDep(
 )
 
 function Vega()
-    local wave, flux
+    local wavelength, flux
     HDF5.h5open(datadep"vega/vega.hd5") do fh
         node = fh["spectrum"]
         data = read(node)
         wlunit = read(HDF5.attributes(node)["WAVELENGTH_UNIT"])
-        wave = map(i -> i.WAVELENGTH, data) * parse_unit(wlunit)
+        wavelength = map(i -> i.WAVELENGTH, data) * parse_unit(wlunit)
         flux = map(i -> i.FLUX, data) # erg/s/AA
     end
-    return wave, flux
+    return wavelength, flux
 end

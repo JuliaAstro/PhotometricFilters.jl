@@ -33,7 +33,7 @@ true
 julia> filt["ZeroPoint"] # Can retrieve metadata directly
 1594.0 Jy
 
-julia> filtername(filt) # `filtername`, `detector_type`, `wave`, `throughput` all work
+julia> filtername(filt) # `filtername`, `detector_type`, `wavelength`, `throughput` all work
 "2MASS/2MASS.J"
 ```
 """
@@ -44,10 +44,10 @@ end
 PhotometricFilter(f::SVOFilter) = f.filter
 OrderedDict(f::SVOFilter) = f.metadata
 Base.Dict(f::SVOFilter) = Dict(OrderedDict(f))
-for f in (:filtername, :detector_type, :wave, :throughput)
+for f in (:filtername, :detector_type, :wavelength, :throughput)
     @eval $f(x::SVOFilter) = $f(PhotometricFilter(x))
 end
-(f::SVOFilter)(wave) = PhotometricFilter(f)(wave)
+(f::SVOFilter)(wavelength) = PhotometricFilter(f)(wavelength)
 Base.getindex(f::SVOFilter, i::AbstractString) = getindex(f.metadata, i)
 Base.haskey(f::SVOFilter, key) = haskey(f.metadata, key)
 Base.keys(f::SVOFilter) = keys(f.metadata)
