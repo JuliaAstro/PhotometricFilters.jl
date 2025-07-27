@@ -27,6 +27,14 @@ plot(filts, palette=palette(:magma, 6), fill=(0, 0.2))
 
 ![](sdss.png)
 
+For more up-to-date and diverse sets of filter curves, you can query the [SVO Filter Profile Service](https://svo2.cab.inta-csic.es/theory/fps/) as shown in the example below for the Roman F146 filter.
+
+```julia
+using PhotometricFilters
+svo_return = get_filter("Roman/WFI.F146");
+filt = svo_return[1]
+```
+
 Using [Unitful.jl](https://github.com/painterqubits/Unitful.jl) is built in to all functionality
 
 ```julia
