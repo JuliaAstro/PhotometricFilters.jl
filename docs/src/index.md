@@ -16,6 +16,15 @@ The simplest concrete filter type we provide to represent photometric filters is
 PhotometricFilter
 ```
 
+The data contained in the struct can be accessed with the following methods:
+
+```@docs
+filtername
+wavelength
+throughput
+detector_type
+```
+
 Users can construct their own filter curvers from raw data using this type.
 
 ## Accessing Filter Curves
@@ -46,18 +55,9 @@ If you'd like to perform a search on the filters available through the SVO filte
 query_filters
 ```
 
-## Supported Operations
 We include functions for performing many common operations on photometric filters, summarized below.
 
-### Accessors
-```@docs
-filtername
-wavelength
-throughput
-detector_type
-```
-
-### Applying Filter Curves to Spectra
+## Applying Filter Curves to Spectra
 
 ```@docs
 apply_throughput
@@ -67,7 +67,7 @@ F_nu
 F_lambda
 ```
 
-### Zero Points
+## Zero Points
 
 ```@docs
 AB_zeropoint_flux
@@ -81,7 +81,7 @@ Vega_zeropoint_mag
 Vega_zeropoint_Jy
 ```
 
-### Synthetic Photometry
+## Synthetic Photometry
 
 ```@docs
 AB_mag
@@ -89,7 +89,7 @@ ST_mag
 Vega_mag
 ```
 
-### Statistics
+## Statistics
 ```@docs
 PhotometricFilters.reference_wavelength
 PhotometricFilters.mean_wavelength
