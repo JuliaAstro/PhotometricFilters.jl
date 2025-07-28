@@ -13,7 +13,16 @@ export PhotometricFilter,
        apply!,
        mean_flux_density,
        F_nu,
-       F_lambda
+       F_lambda,
+       AB_flux_zeropoint,
+       AB_mag_zeropoint,
+       AB_Jy_zeropoint,
+       ST_flux_zeropoint,
+       ST_mag_zeropoint,
+       ST_Jy_zeropoint,
+       Vega_flux_zeropoint,
+       Vega_mag_zeropoint,
+       Vega_Jy_zeropoint
 
 include("core.jl") # types and base utilities (like size, length)
 include("library.jl") # the library of filters
