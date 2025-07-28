@@ -12,9 +12,10 @@ function Vega()
     HDF5.h5open(datadep"vega/vega.hd5") do fh
         node = fh["spectrum"]
         data = read(node)
-        wlunit = read(HDF5.attributes(node)["WAVELENGTH_UNIT"])
-        wavelength = map(i -> i.WAVELENGTH, data) * parse_unit(wlunit)
-        flux = map(i -> i.FLUX, data) # erg/s/AA
+        wlunit = parse_unit(read(HDF5.attributes(node)["WAVELENGTH_UNIT"]))
+        wavelength = map(i -> uconvert(wave_unit, i.WAVELENGTH * wlunit), data)
+        fluxunit = u"erg/s/cm^2/angstrom"
+        flux = map(i -> i.FLUX * fluxunit, data)
     end
     return wavelength, flux
 end
