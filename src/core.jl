@@ -471,7 +471,7 @@ m_{\\text{ST}} = -2.5 * \\text{log} \\left( f_\\lambda \\right) - 21.1
 ```jldoctest
 julia> using PhotometricFilters: ST_mag_zeropoint, SDSS_u
 
-julia> ST_mag_zeropoint(SDSS_u())
+julia> float(ST_mag_zeropoint(SDSS_u()))
 21.1
 ```
 """
