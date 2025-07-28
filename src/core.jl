@@ -478,7 +478,7 @@ true
 ```
 """
 function Vega_mag(f::AbstractFilter, wavelengths, flux)
-    fbar = ustrip(u"erg/s/cm^2/angstrom", mean_flux_density(f, wavelengths, flux))
+    fbar = ustrip(u"erg/s/cm^2/angstrom", mean_flux_density(f, wavelengths, F_lambda.(flux, Ref(f))))
     return -25//10 * log10(fbar) - Vega_zeropoint_mag(f)
 end
 
@@ -540,7 +540,7 @@ true
 ```
 """
 function ST_mag(f::AbstractFilter, wavelengths, flux)
-    fbar = ustrip(u"erg/s/cm^2/angstrom", mean_flux_density(f, wavelengths, flux))
+    fbar = ustrip(u"erg/s/cm^2/angstrom", mean_flux_density(f, wavelengths, F_lambda.(flux, Ref(f))))
     return -25//10 * log10(fbar) - ST_zeropoint_mag(f)
 end
 
@@ -601,7 +601,7 @@ true
 ```
 """
 function AB_mag(f::AbstractFilter, wavelengths, flux)
-    fbar = ustrip(u"erg/s/cm^2/angstrom", mean_flux_density(f, wavelengths, flux))
+    fbar = ustrip(u"erg/s/cm^2/angstrom", mean_flux_density(f, wavelengths, F_lambda.(flux, Ref(f))))
     return -25//10 * log10(fbar) - AB_zeropoint_mag(f)
 end
 
