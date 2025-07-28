@@ -11,7 +11,7 @@ export PhotometricFilter,
        filtername,
        apply, 
        apply!,
-       integrate,
+       mean_flux_density,
        F_nu,
        F_lambda
 

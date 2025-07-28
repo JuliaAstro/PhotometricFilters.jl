@@ -344,7 +344,7 @@ function apply!(filt::AbstractFilter, wavelengths, flux, out)
 end
 
 """
-    integrate(filt::AbstractFilter, wavelengths, flux)
+    mean_flux_density(filt::AbstractFilter, wavelengths, flux)
 Returns the mean flux density of a spectrum (defined by wavelengths `wavelengths` and fluxes `flux`) when integrated over the provided filter `filt`.
 
 For photon counting detectors, this is
@@ -361,15 +361,15 @@ which can also be interpreted as the mean photon rate density, while for energy 
 
 which is essentially just the mean flux weighted by the filter throughput.
 """
-function integrate(wavelengths, flux, throughput, ::Energy)
+function mean_flux_density(wavelengths, flux, throughput, ::Energy)
     return trapz(wavelengths, flux .* throughput) / trapz(wavelengths, throughput)
 end
-function integrate(wavelengths, flux, throughput, ::Photon)
+function mean_flux_density(wavelengths, flux, throughput, ::Photon)
     t1 = wavelengths .* throughput
     return trapz(wavelengths, flux .* t1) / trapz(wavelengths, t1)
 end
-function integrate(filt::AbstractFilter, wavelengths, flux)
-    return integrate(wavelengths, flux, filt.(wavelengths), detector_type(filt))
+function mean_flux_density(filt::AbstractFilter, wavelengths, flux)
+    return mean_flux_density(wavelengths, flux, filt.(wavelengths), detector_type(filt))
 end
 @derived_dimension SpectralFluxDensity Unitful.𝐌 / Unitful.𝐋 / Unitful.𝐓^3
 @derived_dimension SpectralEnergyDensity Unitful.𝐌 / Unitful.𝐓^2

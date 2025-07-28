@@ -62,7 +62,7 @@ detector_type
 ```@docs
 apply
 apply!
-integrate
+mean_flux_density
 F_nu
 F_lambda
 ```
