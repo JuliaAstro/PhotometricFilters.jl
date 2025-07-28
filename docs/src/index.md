@@ -81,6 +81,14 @@ Vega_zeropoint_mag
 Vega_zeropoint_Jy
 ```
 
+### Synthetic Photometry
+
+```@docs
+AB_mag
+ST_mag
+Vega_mag
+```
+
 ### Statistics
 ```@docs
 PhotometricFilters.reference_wavelength
