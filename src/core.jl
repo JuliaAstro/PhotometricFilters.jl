@@ -399,6 +399,7 @@ where ``c`` is the speed of light in *m/s* and ``\\lambda_r`` is the reference w
 """
 F_nu(Fλ::SpectralFluxDensity, λref) = 25370985150//760603 * _ustrip(u"angstrom", λref)^2 * ustrip(u"erg/s/cm^2/angstrom", Fλ) * u"Jy" # Prefactor is 1e5 / (c / 10^8), c = 2.99792458e8 m s^-1, see PR #22
 F_nu(Fλ::SpectralFluxDensity, f::AbstractFilter) = F_nu(Fλ, reference_wavelength(f))
+F_nu(Fν::SpectralEnergyDensity, ::AbstractFilter) = uconvert(u"Jy", Fν)
 
 """
     F_lambda(F_nu::SpectralEnergyDensity, λref)
@@ -413,6 +414,7 @@ where ``c`` is the speed of light in *m/s* and ``\\lambda_r`` is the reference w
 """
 F_lambda(F_nu::SpectralEnergyDensity, λref) = 760603//25370985150 / _ustrip(u"angstrom", λref)^2 * ustrip(u"Jy", F_nu) * u"erg/s/cm^2/angstrom" # Prefactor is (c / 10^8) / 1e5, c = 2.99792458e8 m s^-1, see PR #22
 F_lambda(F_nu::SpectralEnergyDensity, f::AbstractFilter) = F_lambda(F_nu, reference_wavelength(f))
+F_lambda(Fλ::SpectralFluxDensity, ::AbstractFilter) = uconvert(u"erg/s/cm^2/angstrom", Fλ)
 
 """
     Vega_zeropoint_flux(f::AbstractFilter)
@@ -464,7 +466,7 @@ Vega_zeropoint_Jy(f::AbstractFilter) = F_nu(Vega_zeropoint_flux(f), f)
 
 """
     Vega_mag(f::AbstractFilter, wavelengths, flux)
-Calculates the Vega magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`. If Unitful units are not provided on `wavelengths` and `flux`, it is assumed `wavelengths` are in Angstroms and `flux` is in units of [`F_lambda`](@ref), erg / s / cm^2 / Angstrom.
+Calculates the Vega magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`, both of which must have valid Unitful units.
 
 By definition, this method will return 0 when `wavelengths` and `flux` are equal to those returned by [`Vega`](@ref).
 
@@ -528,7 +530,7 @@ ST_zeropoint_Jy(f::AbstractFilter) = F_nu(ST_zeropoint_flux(f), f)
 
 """
     ST_mag(f::AbstractFilter, wavelengths, flux)
-Calculates the ST magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`. If Unitful units are not provided on `wavelengths` and `flux`, it is assumed `wavelengths` are in Angstroms and `flux` is in units of [`F_lambda`](@ref), erg / s / cm^2 / Angstrom.
+Calculates the ST magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`, both of which must have valid Unitful units.
 
 ```jldoctest
 julia> using PhotometricFilters: ST_mag, Vega, HST_WFC3_F110W
@@ -589,7 +591,7 @@ AB_zeropoint_mag(f::AbstractFilter) = -25//10 * log10(ustrip(AB_zeropoint_flux(f
 
 """
     AB_mag(f::AbstractFilter, wavelengths, flux)
-Calculates the AB magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`. If Unitful units are not provided on `wavelengths` and `flux`, it is assumed `wavelengths` are in Angstroms and `flux` is in units of [`F_lambda`](@ref), erg / s / cm^2 / Angstrom.
+Calculates the AB magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`, both of which must have valid Unitful units.
 
 ```jldoctest
 julia> using PhotometricFilters: AB_mag, Vega, HST_WFC3_F110W
