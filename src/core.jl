@@ -307,38 +307,38 @@ function width(f::AbstractFilter)
 end
 
 """
-    apply(f::AbstractFilter, wavelengths, flux)
+    apply_throughput(f::AbstractFilter, wavelengths, flux)
 
 Use linear interpolation to map the wavelengths of the photometric filter `f` to the given `wavelengths` and apply the filter throughput to the `flux`. The provided `wavelengths` and those of the filter must be compatible. This means if one has units, the other one needs units, too.
 
 ```jldoctest
-julia> using PhotometricFilters: SDSS_u, wave_unit, apply
+julia> using PhotometricFilters: SDSS_u, wave_unit, apply_throughput
 
 julia> f = SDSS_u();
 
 julia> λ = 3000:4000
 3000:4000
 
-julia> flux = fill(1.0, length(λ)); # If `flux` is all `1`, `apply` reduces to `f` interpolated at `λ`
+julia> flux = fill(1.0, length(λ)); # If `flux` is all `1`, `apply_throughput` reduces to `f` interpolated at `λ`
 
-julia> apply(f, λ, flux) == f(λ)
+julia> apply_throughput(f, λ, flux) == f(λ)
 true
 
 julia> λ_u = λ .* wave_unit # Can also put units on λ
 (3000:4000) Å
 
-julia> apply(f, λ_u, flux) == f.(λ_u)
+julia> apply_throughput(f, λ_u, flux) == f.(λ_u)
 true
 ```
 """
-apply(filt::AbstractFilter, wavelengths, flux) = apply!(filt, wavelengths, flux, similar(flux))
+apply_throughput(filt::AbstractFilter, wavelengths, flux) = apply_throughput!(filt, wavelengths, flux, similar(flux))
 
 """
-    apply!(f::AbstractFilter, wavelengths, flux, out)
+    apply_throughput!(f::AbstractFilter, wavelengths, flux, out)
 
-In-place version of [`apply`](@ref) which modifies `out`. It should have a compatible element type with `flux`.
+In-place version of [`apply_throughput`](@ref) which modifies `out`. It should have a compatible element type with `flux`.
 """
-function apply!(filt::AbstractFilter, wavelengths, flux, out)
+function apply_throughput!(filt::AbstractFilter, wavelengths, flux, out)
     @. out = flux * filt(wavelengths)
     return out
 end

@@ -60,8 +60,8 @@ detector_type
 ### Applying Filter Curves to Spectra
 
 ```@docs
-apply
-apply!
+apply_throughput
+apply_throughput!
 mean_flux_density
 F_nu
 F_lambda
