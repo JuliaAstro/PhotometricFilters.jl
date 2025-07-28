@@ -475,7 +475,7 @@ julia> ST_mag_zeropoint(SDSS_u())
 21.1
 ```
 """
-ST_mag_zeropoint(::AbstractFilter{T}) where {T} = convert(T, 211//10)
+ST_mag_zeropoint(::AbstractFilter) = 211//10
 
 """
     ST_flux_zeropoint(f::AbstractFilter)
@@ -520,7 +520,7 @@ julia> isapprox(AB_Jy_zeropoint(HST_WFC3_F110W()), 3630.78054 * u"Jy"; rtol=1e-3
 true
 ```
 """
-AB_Jy_zeropoint(::AbstractFilter{T}) where {T} = convert(T, exp10(48.6 / -2.5 + 23)) * u"Jy"
+AB_Jy_zeropoint(::AbstractFilter) = exp10(48.6 / -2.5 + 23) * u"Jy"
 """
     AB_flux_zeropoint(f::AbstractFilter)
 Returns the AB flux zero point of the filter `f` in units of erg / s / cm^2 / Angstrom.
