@@ -468,7 +468,7 @@ Vega_zeropoint_Jy(f::AbstractFilter) = F_nu(Vega_zeropoint_flux(f), f)
     Vega_mag(f::AbstractFilter, wavelengths, flux)
 Calculates the Vega magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`, both of which must have valid Unitful units.
 
-By definition, this method will return 0 when `wavelengths` and `flux` are equal to those returned by [`Vega`](@ref).
+By definition, this method will return 0 for Vega.
 
 ```jldoctest
 julia> using PhotometricFilters: Vega_mag, Vega, HST_WFC3_F110W
