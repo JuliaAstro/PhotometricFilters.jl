@@ -69,24 +69,49 @@ F_lambda
 
 ## Zero Points
 
+We utilize multiple dispatch to support dynamic calculation of zeropoints in the magnitude systems below.
+
 ```@docs
-AB_zeropoint_flux
-AB_zeropoint_mag
-AB_zeropoint_Jy
-ST_zeropoint_flux
-ST_zeropoint_mag
-ST_zeropoint_Jy
-Vega_zeropoint_flux
-Vega_zeropoint_mag
-Vega_zeropoint_Jy
+Vega
+ST
+AB
+```
+
+Zeropoints can be computed with methods below.
+
+```@docs
+zeropoint_flux
+zeropoint_Jy
+zeropoint_mag
+```
+
+!!! info 
+    The above methods are public and exported. Their implementations dispatch to the below internal, unexported functions. If you wish to use the below methods, you should explicitly import them, with `using PhotometricFilters: zeropoint_flux_AB` for example.
+
+```@docs
+PhotometricFilters.zeropoint_flux_AB
+PhotometricFilters.zeropoint_mag_AB
+PhotometricFilters.zeropoint_Jy_AB
+PhotometricFilters.zeropoint_flux_ST
+PhotometricFilters.zeropoint_mag_ST
+PhotometricFilters.zeropoint_Jy_ST
+PhotometricFilters.zeropoint_flux_Vega
+PhotometricFilters.zeropoint_mag_Vega
+PhotometricFilters.zeropoint_Jy_Vega
 ```
 
 ## Synthetic Photometry
 
 ```@docs
-AB_mag
-ST_mag
-Vega_mag
+magnitude
+```
+
+`magnitude` dispatches to the following unexported methods.
+
+```@docs
+magnitude_AB
+magnitude_ST
+magnitude_Vega
 ```
 
 ## Statistics

@@ -17,5 +17,5 @@ function Vega()
         fluxunit = u"erg/s/cm^2/angstrom"
         flux = map(i -> i.FLUX * fluxunit, data)
     end
-    return wavelength, flux
+    return Vega(wavelength, flux, "vega.hdf5")
 end

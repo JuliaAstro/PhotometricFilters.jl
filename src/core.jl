@@ -26,6 +26,60 @@ function Base.parse(::Type{DetectorType}, s::AbstractString)
     end
 end
 
+abstract type ZeropointSystem end
+"""
+    Vega(wave, flux, name::String) <: ZeropointSystem
+Struct for containing a Vega reference spectrum with wavelengths `wave` and
+flux values `flux`. `wave` should be provided in units of $wave_unit and 
+flux should be provided in ``f_λ`` units of erg / s / cm^2 / Angstrom.
+
+The Vega magnitude system is defined so that the star Alpha Lyr (i.e., Vega) has
+magnitude 0 in every filter.
+
+```math
+m_\\text{Vega} = -2.5 \\ \\text{log} \\left( \\frac{\\bar{f_\\lambda}}{\\bar{f_\\lambda} \\left( \\text{Vega} \\right)} \\right)
+```
+
+When passed to methods such as [`zeropoint_flux`](@ref), indicates that you wish
+to have the Vega zeropoint flux returned.
+"""
+struct Vega{T, S} <: ZeropointSystem
+    wave::T
+    flux::S
+    name::String
+end
+Base.show(io::IO, v::Vega) = print(io, "Vega magnitude system with reference spectrum $(v.name).")
+"""
+    AB() <: ZeropointSystem
+Singleton struct representing the AB magnitude system. This system is defined such that
+
+```math
+m_\\text{AB} = -2.5 \\ \\text{log} \\left( \\bar{f_ν} \\right) - 48.60
+```
+
+when ``f_ν`` is in units of erg / s / cm^2 / Hz. This corresponds to a constant 
+[`zeropoint_Jy`](@ref) value in all filters of `exp10(48.6 / -2.5 + 23)` ≈ 3631 Jy.
+    
+When passed to methods such as [`zeropoint_flux`](@ref), indicates that you wish
+to have the AB zeropoint flux returned.
+"""
+struct AB <: ZeropointSystem end
+Base.show(io::IO, ::AB) = println(io, "AB magnitude system.")
+"""
+    ST() <: ZeropointSystem
+Singleton struct representing the ST magnitude system. This system is defined so that a source
+with uniform ``f_\\lambda`` has identical magnitude in every filter.
+
+```math
+m_\\text{ST} = -2.5 \\ \\text{log} \\left( \\bar{f_\\lambda} \\right) - 21.1
+```
+    
+When passed to methods such as [`zeropoint_flux`](@ref), indicates that you wish
+to have the ST zeropoint flux returned.
+"""
+struct ST <: ZeropointSystem end
+Base.show(io::IO, ::ST) = println(io, "ST magnitude system.")
+
 """
     AbstractFilter{T}
 Abstract supertype for representing photometric filters. Most functions provided by this package (e.g., [`effective_wavelength`](@ref PhotometricFilters.effective_wavelength) and similar methods) are designed to work with any subtype of `AbstractFilter` so long as a minimal API is defined for new subtypes. The methods that should be implemented for new types to conform to this API are summarized below:
@@ -124,17 +178,17 @@ function filtername(::AbstractFilter) end
 
 # Statistics
 """
-    effective_wavelength(f::AbstractFilter)
+    effective_wavelength(f::AbstractFilter, v::Vega = Vega())
 
-Returns the effective wavelength of the filter `f` using the Vega spectrum as a standard. Defined as
+Returns the effective wavelength of the filter `f` using the Vega spectrum contained in `v` as a standard. Defined as
 
 ```math
 \\frac{\\int \\lambda \\, T(\\lambda) \\text{Vg}(\\lambda) \\, d\\lambda}{\\int T(\\lambda) \\text{Vg}(\\lambda) \\, d\\lambda}
 ```
 where ``T(\\lambda)`` is the filter transmission at wavelength ``\\lambda`` and ``\\text{Vg}(\\lambda)`` is the spectrum of Vega.
 """
-function effective_wavelength(f::AbstractFilter)
-    wvega, fvega = Vega()
+function effective_wavelength(f::AbstractFilter, v::Vega = Vega())
+    wvega, fvega = v.wave, v.flux
     wl = uconvert.(wave_unit, wvega)
     filt = f.(wl) .* fvega
     norm = trapz(wl, filt)
@@ -368,7 +422,9 @@ julia> using PhotometricFilters: mean_flux_density, HST_WFC3_F110W, Vega
 
 julia> using Unitful, UnitfulAstro
 
-julia> mfd = mean_flux_density(HST_WFC3_F110W(), Vega()...);
+julia> v = Vega();
+
+julia> mfd = mean_flux_density(HST_WFC3_F110W(), v.wave, v.flux);
 
 julia> isapprox(mfd, 4.082289e-10 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
 true
@@ -417,192 +473,274 @@ F_lambda(F_nu::SpectralEnergyDensity, f::AbstractFilter) = F_lambda(F_nu, refere
 F_lambda(Fλ::SpectralFluxDensity, ::AbstractFilter) = uconvert(u"erg/s/cm^2/angstrom", Fλ)
 
 """
-    Vega_zeropoint_flux(f::AbstractFilter)
-Returns the Vega flux zero point of the filter `f` in units of erg / s / cm^2 / Angstrom.
+    zeropoint_Jy(f::AbstractFilter, sys::Union{AB, ST, Vega})
+Returns the flux zeropoint of the filter `f` in the magnitude system `sys`, in units of Jansky.
+Depending on the type of `sys`, dispatches to one of [`zeropoint_Jy_AB`](@ref), [`zeropoint_Jy_ST`](@ref),
+or [`zeropoint_Jy_Vega`](@ref) -- see their docstrings for more information.
 
 ```jldoctest
-julia> using PhotometricFilters: Vega_zeropoint_flux, HST_WFC3_F110W
+julia> using PhotometricFilters: HST_WFC3_F110W, zeropoint_Jy, AB
 
-julia> using Unitful
+julia> using Unitful, UnitfulAstro
 
-julia> isapprox(Vega_zeropoint_flux(HST_WFC3_F110W()), 4.082289e-10 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
+julia> isapprox(zeropoint_Jy(HST_WFC3_F110W(), AB()), 3630.78054 * u"Jy"; rtol=1e-3)
 true
 ```
 """
-Vega_zeropoint_flux(f::AbstractFilter) = mean_flux_density(f, Vega()...)
+zeropoint_Jy(f::AbstractFilter, ::AB) = zeropoint_Jy_AB(f)
+zeropoint_Jy(f::AbstractFilter, ::ST) = zeropoint_Jy_ST(f)
+zeropoint_Jy(f::AbstractFilter, v::Vega) = zeropoint_Jy_Vega(f, v)
 """
-    Vega_zeropoint_mag(f::AbstractFilter)
-Returns the Vega magnitude zero point of the filter `f`. Can be used to calculate Vega magnitudes from spectra in units of [`F_lambda`](@ref) as
+    zeropoint_flux(f::AbstractFilter, sys::Union{AB, ST, Vega})
+Returns the flux zeropoint of the filter `f` in the magnitude system `sys`, in units of erg / s / cm^2 / Angstrom.
+Depending on the type of `sys`, dispatches to one of [`zeropoint_flux_AB`](@ref), [`zeropoint_flux_ST`](@ref),
+or [`zeropoint_flux_Vega`](@ref) -- see their docstrings for more information.
+
+```jldoctest
+julia> using PhotometricFilters: HST_WFC3_F110W, zeropoint_flux, ST
+
+julia> using Unitful
+
+julia> isapprox(zeropoint_flux(HST_WFC3_F110W(), ST()), 3.6307805e-9 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
+true
+```
+"""
+zeropoint_flux(f::AbstractFilter, ::AB) = zeropoint_flux_AB(f)
+zeropoint_flux(f::AbstractFilter, ::ST) = zeropoint_flux_ST(f)
+zeropoint_flux(f::AbstractFilter, v::Vega) = zeropoint_flux_Vega(f, v)
+"""
+    zeropoint_mag(f::AbstractFilter, sys::Union{AB, ST, Vega})
+Returns the magnitude zeropoint of the filter `f` in the magnitude system `sys`.
+Depending on the type of `sys`, dispatches to one of [`zeropoint_mag_AB`](@ref), [`zeropoint_mag_ST`](@ref),
+or [`zeropoint_mag_Vega`](@ref) -- see their docstrings for more information.
+
+```jldoctest
+julia> using PhotometricFilters: HST_WFC3_F110W, zeropoint_mag
+
+julia> float(zeropoint_mag(HST_WFC3_F110W(), ST()))
+21.1
+```
+"""
+zeropoint_mag(f::AbstractFilter, ::AB) = zeropoint_mag_AB(f)
+zeropoint_mag(f::AbstractFilter, ::ST) = zeropoint_mag_ST(f)
+zeropoint_mag(f::AbstractFilter, v::Vega) = zeropoint_mag_Vega(f, v)
+"""
+    magnitude(f::AbstractFilter, sys::Union{AB, ST, Vega}, wavelengths, flux)
+Calculates the magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`, both of which must have valid Unitful units.
+The magnitude is returned in the system given by `sys`.
+Depending on the type of `sys`, dispatches to one of [`magnitude_AB`](@ref), [`magnitude_ST`](@ref),
+or [`magnitude_Vega`](@ref) -- see their docstrings for more information.
+
+```jldoctest
+julia> using PhotometricFilters: magnitude, Vega, HST_WFC3_F110W
+
+julia> v = Vega();
+
+julia> isapprox(magnitude(HST_WFC3_F110W(), v, v.wave, v.flux), 0; rtol=1e-3)
+true
+```
+"""
+magnitude(f::AbstractFilter, v::Vega, wavelengths, flux) = magnitude_Vega(f, v, wavelengths, flux)
+magnitude(f::AbstractFilter, ::AB, wavelengths, flux) = magnitude_AB(f::AbstractFilter, wavelengths, flux)
+magnitude(f::AbstractFilter, ::ST, wavelengths, flux) = magnitude_ST(f::AbstractFilter, wavelengths, flux)
+
+"""
+    zeropoint_flux_Vega(f::AbstractFilter, v::Vega = Vega())
+Returns the Vega flux zero point of the filter `f` in units of erg / s / cm^2 / Angstrom
+using the reference spectrum stored in `v`.
+
+```jldoctest
+julia> using PhotometricFilters: zeropoint_flux_Vega, HST_WFC3_F110W
+
+julia> using Unitful
+
+julia> isapprox(zeropoint_flux_Vega(HST_WFC3_F110W()), 4.082289e-10 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
+true
+```
+"""
+zeropoint_flux_Vega(f::AbstractFilter, v::Vega = Vega()) = mean_flux_density(f, v.wave, v.flux)
+
+"""
+    zeropoint_mag_Vega(f::AbstractFilter, v::Vega = Vega())
+Returns the Vega magnitude zero point of the filter `f` using the reference spectrum stored in `v`. 
+Can be used to calculate Vega magnitudes from spectra in units of [`F_lambda`](@ref) as
 ```math
 m_{\\text{Vega}} = -2.5 * \\text{log} \\left( f_\\lambda \\right) - \\text{Zpt}
 ```
 
 ```jldoctest
-julia> using PhotometricFilters: Vega_zeropoint_mag, HST_WFC3_F110W
+julia> using PhotometricFilters: zeropoint_mag_Vega, HST_WFC3_F110W
 
-julia> isapprox(Vega_zeropoint_mag(HST_WFC3_F110W()), 23.4727487; rtol=1e-3)
+julia> isapprox(zeropoint_mag_Vega(HST_WFC3_F110W()), 23.4727487; rtol=1e-3)
 true
 ```
 """
-function Vega_zeropoint_mag(f::AbstractFilter)
-    flux = Vega_zeropoint_flux(f)
+function zeropoint_mag_Vega(f::AbstractFilter, v::Vega = Vega())
+    flux = zeropoint_flux_Vega(f, v)
     return -25//10 * log10(ustrip(flux))
 end
 
 """
-    Vega_zeropoint_Jy(f::AbstractFilter)
-Returns the Vega flux zeropoint of the filter `f` in Jansky.
+    zeropoint_Jy_Vega(f::AbstractFilter, v::Vega = Vega())
+Returns the Vega flux zeropoint of the filter `f` in Jansky using the reference spectrum stored in `v`.
 
 ```jldoctest
-julia> using PhotometricFilters: Vega_zeropoint_Jy, HST_WFC3_F110W
+julia> using PhotometricFilters: zeropoint_Jy_Vega, HST_WFC3_F110W
 
 julia> using Unitful, UnitfulAstro
 
-julia> isapprox(Vega_zeropoint_Jy(HST_WFC3_F110W()), 1816.43597 * u"Jy"; rtol=1e-3)
+julia> isapprox(zeropoint_Jy_Vega(HST_WFC3_F110W()), 1816.43597 * u"Jy"; rtol=1e-3)
 true
 ```
 """
-Vega_zeropoint_Jy(f::AbstractFilter) = F_nu(Vega_zeropoint_flux(f), f)
+zeropoint_Jy_Vega(f::AbstractFilter, v::Vega = Vega()) = F_nu(zeropoint_flux_Vega(f, v), f)
 
 """
-    Vega_mag(f::AbstractFilter, wavelengths, flux)
+    magnitude_Vega(f::AbstractFilter, v::Vega, wavelengths, flux)
 Calculates the Vega magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`, both of which must have valid Unitful units.
 
 By definition, this method will return 0 for Vega.
 
 ```jldoctest
-julia> using PhotometricFilters: Vega_mag, Vega, HST_WFC3_F110W
+julia> using PhotometricFilters: magnitude_Vega, Vega, HST_WFC3_F110W
 
-julia> isapprox(Vega_mag(HST_WFC3_F110W(), Vega()...), 0; rtol=1e-3)
+julia> v = Vega(); 
+
+julia> isapprox(magnitude_Vega(HST_WFC3_F110W(), v, v.wave, v.flux), 0; rtol=1e-3)
 true
 ```
 """
-function Vega_mag(f::AbstractFilter, wavelengths, flux)
+function magnitude_Vega(f::AbstractFilter, v::Vega, wavelengths, flux)
     fbar = ustrip(u"erg/s/cm^2/angstrom", mean_flux_density(f, wavelengths, F_lambda.(flux, Ref(f))))
-    return -25//10 * log10(fbar) - Vega_zeropoint_mag(f)
+    return -25//10 * log10(fbar) - zeropoint_mag_Vega(f, v)
 end
 
 """
-    ST_zeropoint_mag(::AbstractFilter)
+    zeropoint_mag_ST(::AbstractFilter)
 Returns the ST magnitude zero point, which is always equal to 21.1.
 ```math
 m_{\\text{ST}} = -2.5 * \\text{log} \\left( f_\\lambda \\right) - 21.1
 ```
 
 ```jldoctest
-julia> using PhotometricFilters: ST_zeropoint_mag, SDSS_u
+julia> using PhotometricFilters: zeropoint_mag_ST, SDSS_u
 
-julia> float(ST_zeropoint_mag(SDSS_u()))
+julia> float(zeropoint_mag_ST(SDSS_u()))
 21.1
 ```
 """
-ST_zeropoint_mag(::AbstractFilter) = 211//10
+zeropoint_mag_ST(::AbstractFilter) = 211//10
 
 """
-    ST_zeropoint_flux(f::AbstractFilter)
+    zeropoint_flux_ST(f::AbstractFilter)
 Returns the ST flux zero point of the filter `f` in units of erg / s / cm^2 / Angstrom.
 
 ```jldoctest
-julia> using PhotometricFilters: ST_zeropoint_flux, HST_WFC3_F110W
+julia> using PhotometricFilters: zeropoint_flux_ST, HST_WFC3_F110W
 
 julia> using Unitful
 
-julia> isapprox(ST_zeropoint_flux(HST_WFC3_F110W()), 3.6307805e-9 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
+julia> isapprox(zeropoint_flux_ST(HST_WFC3_F110W()), 3.6307805e-9 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
 true
 ```
 """
-ST_zeropoint_flux(f::AbstractFilter) = exp10(-4//10 * ST_zeropoint_mag(f)) * u"erg/s/cm^2/angstrom"
+zeropoint_flux_ST(f::AbstractFilter) = exp10(-4//10 * zeropoint_mag_ST(f)) * u"erg/s/cm^2/angstrom"
 
 """
-    ST_zeropoint_Jy(f::AbstractFilter)
+    zeropoint_Jy_ST(f::AbstractFilter)
 Returns the ST flux zeropoint of the filter `f` in Jansky.
 
 ```jldoctest
-julia> using PhotometricFilters: ST_zeropoint_Jy, HST_WFC3_F110W
+julia> using PhotometricFilters: zeropoint_Jy_ST, HST_WFC3_F110W
 
 julia> using Unitful, UnitfulAstro
 
-julia> isapprox(ST_zeropoint_Jy(HST_WFC3_F110W()), 16155.46954* u"Jy"; rtol=1e-3)
+julia> isapprox(zeropoint_Jy_ST(HST_WFC3_F110W()), 16155.46954* u"Jy"; rtol=1e-3)
 true
 ```
 """
-ST_zeropoint_Jy(f::AbstractFilter) = F_nu(ST_zeropoint_flux(f), f)
+zeropoint_Jy_ST(f::AbstractFilter) = F_nu(zeropoint_flux_ST(f), f)
 
 """
-    ST_mag(f::AbstractFilter, wavelengths, flux)
+    magnitude_ST(f::AbstractFilter, wavelengths, flux)
 Calculates the ST magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`, both of which must have valid Unitful units.
 
 ```jldoctest
-julia> using PhotometricFilters: ST_mag, Vega, HST_WFC3_F110W
+julia> using PhotometricFilters: magnitude_ST, Vega, HST_WFC3_F110W
 
-julia> isapprox(ST_mag(HST_WFC3_F110W(), Vega()...), 2.372748728; rtol=1e-3)
+julia> v = Vega();
+
+julia> isapprox(magnitude_ST(HST_WFC3_F110W(), v.wave, v.flux), 2.372748728; rtol=1e-3)
 true
 ```
 """
-function ST_mag(f::AbstractFilter, wavelengths, flux)
+function magnitude_ST(f::AbstractFilter, wavelengths, flux)
     fbar = ustrip(u"erg/s/cm^2/angstrom", mean_flux_density(f, wavelengths, F_lambda.(flux, Ref(f))))
-    return -25//10 * log10(fbar) - ST_zeropoint_mag(f)
+    return -25//10 * log10(fbar) - zeropoint_mag_ST(f)
 end
 
 """
-    AB_zeropoint_Jy(::AbstractFilter{T})
+    zeropoint_Jy_AB(::AbstractFilter)
 Returns the AB flux zeropoint in Jansky. It is often approximated that this is 3631 Jy, following from the definition ``m_\\text{AB} = -2.5 \\text{log} f_\\nu - 48.6`` where ``f_\\nu`` is in units of erg / s / cm^2 / Hz. This can be solved for ``m_\\text{AB} = 0`` to give ``f_{\\nu, 0} = 10^{\\frac{48.6}{-2.5}}`` which is approximately ``3.631 \\times 10^{-20}`` erg / s / cm^2 / Hz, or ≈ 3631 Jy. This function returns the exact value.
 
 ```jldoctest
-julia> using PhotometricFilters: AB_zeropoint_Jy, HST_WFC3_F110W
+julia> using PhotometricFilters: zeropoint_Jy_AB, HST_WFC3_F110W
 
 julia> using Unitful, UnitfulAstro
 
-julia> isapprox(AB_zeropoint_Jy(HST_WFC3_F110W()), 3630.78054 * u"Jy"; rtol=1e-3)
+julia> isapprox(zeropoint_Jy_AB(HST_WFC3_F110W()), 3630.78054 * u"Jy"; rtol=1e-3)
 true
 ```
 """
-AB_zeropoint_Jy(::AbstractFilter) = exp10(48.6 / -2.5 + 23) * u"Jy"
+zeropoint_Jy_AB(::AbstractFilter) = exp10(48.6 / -2.5 + 23) * u"Jy"
+
 """
-    AB_zeropoint_flux(f::AbstractFilter)
+    zeropoint_flux_AB(f::AbstractFilter)
 Returns the AB flux zero point of the filter `f` in units of erg / s / cm^2 / Angstrom.
 
 ```jldoctest
-julia> using PhotometricFilters: AB_zeropoint_flux, HST_WFC3_F110W
+julia> using PhotometricFilters: zeropoint_flux_AB, HST_WFC3_F110W
 
 julia> using Unitful
 
-julia> isapprox(AB_zeropoint_flux(HST_WFC3_F110W()), 8.159816925e-10 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
+julia> isapprox(zeropoint_flux_AB(HST_WFC3_F110W()), 8.159816925e-10 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
 true
 ```
 """
-AB_zeropoint_flux(f::AbstractFilter) = F_lambda(AB_zeropoint_Jy(f), f)
+zeropoint_flux_AB(f::AbstractFilter) = F_lambda(zeropoint_Jy_AB(f), f)
 
 """
-    AB_zeropoint_mag(f::AbstractFilter)
+    zeropoint_mag_AB(f::AbstractFilter)
 Returns the AB magnitude zero point of the filter `f`. Can be used to calculate AB magnitudes from spectra in units of [`F_lambda`](@ref) as
 ```math
 m_{\\text{AB}} = -2.5 * \\text{log} \\left( f_\\lambda \\right) - \\text{Zpt}
 ```
 
 ```jldoctest
-julia> using PhotometricFilters: AB_zeropoint_mag, HST_WFC3_F110W
+julia> using PhotometricFilters: zeropoint_mag_AB, HST_WFC3_F110W
 
-julia> isapprox(AB_zeropoint_mag(HST_WFC3_F110W()), 22.7207989; rtol=1e-3)
+julia> isapprox(zeropoint_mag_AB(HST_WFC3_F110W()), 22.7207989; rtol=1e-3)
 true
 ```
 """
-AB_zeropoint_mag(f::AbstractFilter) = -25//10 * log10(ustrip(AB_zeropoint_flux(f)))
+zeropoint_mag_AB(f::AbstractFilter) = -25//10 * log10(ustrip(zeropoint_flux_AB(f)))
 
 """
-    AB_mag(f::AbstractFilter, wavelengths, flux)
+    magnitude_AB(f::AbstractFilter, wavelengths, flux)
 Calculates the AB magnitude in the given filter `f` from a spectrum defined by arrays `wavelengths` and `flux`, both of which must have valid Unitful units.
 
 ```jldoctest
-julia> using PhotometricFilters: AB_mag, Vega, HST_WFC3_F110W
+julia> using PhotometricFilters: magnitude_AB, Vega, HST_WFC3_F110W
 
-julia> isapprox(AB_mag(HST_WFC3_F110W(), Vega()...), 0.7519497; rtol=1e-3)
+julia> v = Vega();
+
+julia> isapprox(magnitude_AB(HST_WFC3_F110W(), v.wave, v.flux), 0.7519497; rtol=1e-3)
 true
 ```
 """
-function AB_mag(f::AbstractFilter, wavelengths, flux)
+function magnitude_AB(f::AbstractFilter, wavelengths, flux)
     fbar = ustrip(u"erg/s/cm^2/angstrom", mean_flux_density(f, wavelengths, F_lambda.(flux, Ref(f))))
-    return -25//10 * log10(fbar) - AB_zeropoint_mag(f)
+    return -25//10 * log10(fbar) - zeropoint_mag_AB(f)
 end
 
 ############################################################
@@ -619,7 +757,7 @@ end
 
 """
     PhotometricFilter(wavelength::AbstractVector, throughput::AbstractVector{T};
-                      detector::DetectorType=Photon(), filtername::Union{String, Nothing}=nothing)
+                      detector::DetectorType=Photon(), filtername::Union{String, Nothing}=nothing) where T
 Struct representing a photometric filter, defined by vectors of wavelengths (`wavelength`) and filter throughputs (`throughput`).
 `wavelength` can have `Unitful` units attached, otherwise they are assumed to be $wave_unit.
 Optional keyword arguments define the detector type for which the filter is valid and a name to identify the filter.
