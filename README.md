@@ -13,7 +13,7 @@ This package is not yet registered. Ovne can install the most recent version fro
 
 ```julia
 import Pkg
-Pkg.add(url=https://github.com/JuliaAstro/PhotometricFilters.jl.git)
+Pkg.add(url="https://github.com/JuliaAstro/PhotometricFilters.jl.git")
 ```
 
 ## Usage
