@@ -639,8 +639,8 @@ detector_type(f::PhotometricFilter) = f.detector
 wavelength(f::PhotometricFilter) = f.wavelength
 throughput(f::PhotometricFilter) = f.throughput
 function (f::PhotometricFilter)(wavelength::Q) where Q <: Unitful.Length
-    wl = uconvert.(wave_unit, wavelength)
-    return f.etp(wl)
+    wl = uconvert(wave_unit, wavelength)
+    return ustrip(f.etp(wl))
 end
 
 function Base.:*(f1::PhotometricFilter, f2::PhotometricFilter)
