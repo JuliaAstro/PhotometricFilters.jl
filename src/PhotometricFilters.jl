@@ -5,10 +5,20 @@ using DataDeps: register, DataDep, @datadep_str
 export PhotometricFilter,
        get_filter,
        query_filters,
-       wave, 
-       throughput, 
+       wavelength, 
+       throughput,
+       detector_type,
+       filtername,
        apply, 
-       apply!
+       apply!,
+       mean_flux_density,
+       F_nu,
+       F_lambda,
+       Vega, AB, ST,
+       zeropoint_Jy,
+       zeropoint_flux,
+       zeropoint_mag,
+       magnitude
 
 include("core.jl") # types and base utilities (like size, length)
 include("library.jl") # the library of filters

@@ -8,10 +8,21 @@ This package provides access to, and operations on, photometric filter curves. S
 
 ## Types
 
-We use the [`PhotometricFilter`](@ref) type to represent photometric filters in this package.
+All photometric filter types should be subtypes of the [`AbstractFilter`](@ref PhotometricFilters.AbstractFilter) type. We define a minimal API that should be followed so that new types can make use of the generic filter operations we define.
+
+The simplest concrete filter type we provide to represent photometric filters is [`PhotometricFilter`](@ref).
 
 ```@docs
 PhotometricFilter
+```
+
+The data contained in the struct can be accessed with the following methods:
+
+```@docs
+filtername
+wavelength
+throughput
+detector_type
 ```
 
 Users can construct their own filter curvers from raw data using this type.
@@ -31,10 +42,11 @@ using PhotometricFilters: SDSS_u, SDSS_g, SDSS_r, SDSS_i, SDSS_z, fwhm
 filts = [SDSS_u(), SDSS_g(), SDSS_r(), SDSS_i(), SDSS_z()]
 ```
 
-**NOTE THAT THESE INCLUDED FILTER CURVES ARE NOT GUARANTEED TO BE UP-TO-DATE.** If you are using a filter/instrument that may have recently had its filter curves updated (e.g., JWST/NIRCAM), you should use our SVO query interface to make sure you get the most up-to-date filter curves. If you know the SVO-designated name of the filter you want, you can use [`get_filter`](@ref) to retrieve its transmission data, which returns an instance of [`PhotometricFilter`](@ref).
+**NOTE THAT THESE INCLUDED FILTER CURVES ARE NOT GUARANTEED TO BE UP-TO-DATE.** If you are using a filter/instrument that may have recently had its filter curves updated (e.g., JWST/NIRCAM), you should use our SVO query interface to make sure you get the most up-to-date filter curves. SVO also provides additional metadata that is useful for some applications (e.g., filter zeropoints). If you know the SVO-designated name of the filter you want, you can use [`get_filter`](@ref) to retrieve its transmission data, which returns an instance of [`SVOFilter`](@ref PhotometricFilters.SVOFilter).
 
 ```@docs
 get_filter
+PhotometricFilters.SVOFilter
 ```
 
 If you'd like to perform a search on the filters available through the SVO filter service, you can use [`query_filters`](@ref).
@@ -43,18 +55,46 @@ If you'd like to perform a search on the filters available through the SVO filte
 query_filters
 ```
 
-## Supported Operations
 We include functions for performing many common operations on photometric filters, summarized below.
 
-### Applying Filter Curves to Spectra
+## Applying Filter Curves to Spectra
 
 ```@docs
-apply
-apply!
+apply_throughput
+apply_throughput!
+mean_flux_density
+F_nu
+F_lambda
 ```
 
-### Statistics
+## Zero Points
+
+We utilize multiple dispatch to support dynamic calculation of zeropoints in the magnitude systems below.
+
 ```@docs
+PhotometricFilters.MagnitudeSystem
+AB
+ST
+Vega
+```
+
+Zeropoints can be computed with methods below.
+
+```@docs
+zeropoint_flux
+zeropoint_Jy
+zeropoint_mag
+```
+
+## Synthetic Photometry
+
+```@docs
+magnitude
+```
+
+## Statistics
+```@docs
+PhotometricFilters.reference_wavelength
 PhotometricFilters.mean_wavelength
 PhotometricFilters.central_wavelength
 PhotometricFilters.effective_wavelength
@@ -65,8 +105,9 @@ PhotometricFilters.fwhm
 PhotometricFilters.width
 ```
 
-## Internal Functions
+## Internals
 ```@docs
+PhotometricFilters.AbstractFilter
 PhotometricFilters.get_metadata
 ```
 
