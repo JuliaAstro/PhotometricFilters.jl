@@ -8,16 +8,14 @@ const PYPHOT_DATADEP = DataDep(
     "9078486ec989bc0ffddb60f9cda686dff887c5d69627bc4703fd41d78a9e7d46";
 )
 
-function read_filter(name::AbstractString, units=true)
+function read_filter(name::AbstractString)
     local wave, through, dtype, fname
     HDF5.h5open(datadep"filters/new_filters.hd5") do fh
         node = fh["filters/$name"]
         data = read(node)
         wave = map(i -> i.WAVELENGTH, data)
-        if units
-            unitstr = read(HDF5.attributes(node)["WAVELENGTH_UNIT"])
-            wave *= parse_unit(unitstr)
-        end
+        unitstr = read(HDF5.attributes(node)["WAVELENGTH_UNIT"])
+        wave *= parse_unit(unitstr)
         through = map(i -> i.THROUGHPUT, data)
         dtype = read(HDF5.attributes(node)["DETECTOR"])
         fname = read(HDF5.attributes(node)["NAME"])
@@ -313,5 +311,5 @@ const FILTER_NAMES = [
 
 for filter_name in FILTER_NAMES
     F = Symbol(filter_name)
-    @eval $F(; units=true) = read_filter($filter_name, units)
+    @eval $F() = read_filter($filter_name)
 end
