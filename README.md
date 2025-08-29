@@ -38,8 +38,7 @@ For more up-to-date and diverse sets of filter curves, you can query the [SVO Fi
 
 ```julia
 using PhotometricFilters
-svo_return = get_filter("Roman/WFI.F146");
-filt = svo_return[1]
+svo_filter = get_filter("Roman/WFI.F146")
 ```
 
 Using [Unitful.jl](https://github.com/painterqubits/Unitful.jl) is built in to all functionality
