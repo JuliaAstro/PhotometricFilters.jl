@@ -20,7 +20,7 @@ Pkg.add(url="https://github.com/JuliaAstro/PhotometricFilters.jl.git")
 
 ```julia
 using PhotometricFilters
-using PhotometricFilters: SDSS_u, SDSS_g, SDSS_r, SDSS_i, SDSS_z, fwhm
+using PhotometricFilters: SDSS_u, SDSS_g, SDSS_r, SDSS_i, SDSS_z, pivot_wavelength
 
 filts = [SDSS_u(), SDSS_g(), SDSS_r(), SDSS_i(), SDSS_z()]
 ```
@@ -45,10 +45,10 @@ Using [Unitful.jl](https://github.com/painterqubits/Unitful.jl) is built in to a
 
 ```julia
 
-julia> filt_units = SDSS_u(units=true);
+julia> filt = SDSS_u();
 
-julia> fwhm(filt_units)
-600.0 Å
+julia> pivot_wavelength(filt)
+3556.523969910118 Å
 ```
 
 ## Citations
