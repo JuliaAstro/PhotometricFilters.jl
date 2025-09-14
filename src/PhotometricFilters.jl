@@ -1,6 +1,9 @@
 module PhotometricFilters
 
 using DataDeps: register, DataDep, @datadep_str
+# This will be filled in inside `__init__()`
+vega_cache = ""
+using Scratch: @get_scratch!, download
 
 export PhotometricFilter,
        get_filter,
@@ -28,7 +31,8 @@ include("svo.jl")  # Query SVO service for filter curves
 
 function __init__()
     register(PYPHOT_DATADEP)
-    register(VEGA_DATADEP)
+    # register(VEGA_DATADEP)
+    global vega_cache = @get_scratch!(joinpath("vega_standards"))
 end
 
 end
