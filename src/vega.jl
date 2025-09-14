@@ -1,5 +1,6 @@
 import HDF5
 import FITSIO
+import Downloads
 
 """
     Vega(name::String = "alpha_lyr_stis_011")
@@ -22,7 +23,7 @@ function Vega(name::String = "alpha_lyr_stis_011")
     # Load from CALSPEC database or local cache
     fname = joinpath(vega_cache, name)
     if !isfile(fname)
-        Base.download("https://ssb.stsci.edu/cdbs/calspec/" * name, fname)
+        Downloads.download("https://ssb.stsci.edu/cdbs/calspec/" * name, fname)
     end
     return Vega(fname)
 end
