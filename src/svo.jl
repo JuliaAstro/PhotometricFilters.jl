@@ -77,10 +77,10 @@ julia> filt = get_filter("2MASS/2MASS.J", :Vega)
  reference wave.: 12350.0 Å
  min. wave.: 10806.470589792389 Å
  max. wave.: 14067.974683578484 Å
- effective wave.: 12285.654731403807 Å
+ effective wave.: 12284.994608629975 Å
  mean wave.: 12410.5170694321 Å
  central wave.: 12390.584132888223 Å
- pivot wave.: 12358.089456559974 Å
+ pivot wave.: 12393.093155655275 Å
  eff. width: 1624.3245065600008 Å
  fwhm: 2149.1445403830403 Å
 ```

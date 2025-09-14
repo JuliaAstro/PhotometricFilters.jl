@@ -78,6 +78,12 @@ ST
 Vega
 ```
 
+Any reference spectrum hosted by [CALSPEC](https://ssb.stsci.edu/cdbs/calspec/) can be used to construct an instance of [`Vega`](@ref) using the method below.
+
+```@docs
+Vega(::String)
+```
+
 Zeropoints can be computed with methods below.
 
 ```@docs
