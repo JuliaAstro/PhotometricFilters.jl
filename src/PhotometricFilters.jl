@@ -31,7 +31,7 @@ include("svo.jl")  # Query SVO service for filter curves
 
 function __init__()
     register(PYPHOT_DATADEP)
-    global vega_cache = @get_scratch!(joinpath("vega_standards"))
+    global vega_cache = @get_scratch!("vega_standards")
 end
 
 end
