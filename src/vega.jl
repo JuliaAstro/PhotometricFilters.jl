@@ -39,6 +39,9 @@ julia> using PhotometricFilters: Vega, get_calspec_names
 
 julia> names = get_calspec_names();
 
+julia> names isa Vector{String}
+true
+
 julia> Vega(names[1]) isa Vega
 true
 
