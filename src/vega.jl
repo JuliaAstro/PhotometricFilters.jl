@@ -27,3 +27,44 @@ function Vega(name::String = "alpha_lyr_stis_011")
     return Vega(fname)
 end
 Vega(name::AbstractString) = Vega(string(name))
+
+"""
+    get_calspec_names()
+Returns a list of the names of the available spectral standards that can be download from CALSPEC and used as a standard in the Vega magnitude system.
+
+```jldoctest calspecnames
+julia> using PhotometricFilters: Vega, get_calspec_names
+
+julia> names = get_calspec_names();
+
+julia> Vega(names[1]) isa Vega
+true
+```
+
+    get_calspec_names(substring::AbstractString)
+Filters the list of available spectral standards that can be downloaded from CALSPEC to only include those that contain the provided substring. Can be used to get all the standards for Vega (Alpha Lyrae), for example. 
+
+```jldoctest calspecnames
+julia> vega_standards = get_calspec_names("alpha_lyr");
+
+julia> all(map(x -> occursin("alpha_lyr", x), vega_standards))
+true
+"""
+function get_calspec_names()
+    response = HTTP.get("https://ssb.stsci.edu/cdbs/calspec/")
+    xml = read(IOBuffer(response.body), LazyNode)
+
+    calspec_names = String[]
+
+    for node in xml
+        if tag(node) == "a"
+            filename = value(children(node)[1])
+            calspec_name, ext = splitext(filename)
+            ext == ".fits" || continue
+            push!(calspec_names, calspec_name)
+        end
+    end
+
+    return calspec_names
+end
+get_calspec_names(f::AbstractString) = filter(x -> occursin(f, x), get_calspec_names())

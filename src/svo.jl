@@ -3,7 +3,7 @@ import HTTP
 import OrderedCollections: OrderedDict
 # using Unitful: uparse, ustrip, NoUnits
 # import UnitfulAstro
-using XML: Node, LazyNode, children, simple_value, attributes, tag, next
+using XML: Node, LazyNode, children, simple_value, value, attributes, tag, next
 import VOTables
 
 const svo_url = "http://svo2.cab.inta-csic.es/theory/fps/fps.php"
