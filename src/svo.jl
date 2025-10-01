@@ -142,7 +142,7 @@ from the `FORMAT=metadata` VOTable they provide.
 The table is a `DataFrame` from the [`DataFrames`](https://github.com/JuliaData/DataFrames.jl)
 package with the following columns:
 - `parameter`: parameter name that can be used for queries using [`query_filters`](@ref)
-- `unit`: [`Unitful`](https://github.com/PainterQubits/Unitful.jl) unit of the parameter
+- `unit`: [`Unitful`](https://github.com/JuliaPhysics/Unitful.jl) unit of the parameter
 - `datatype`: `Type` of the parameter
 - `description`: description of the parameter
 - `values`: vector of the possible values that the respective parameter can take on (e.g. for Instrument),
