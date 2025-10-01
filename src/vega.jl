@@ -16,7 +16,7 @@ function Vega(name::String = "alpha_lyr_stis_011")
         return FITSIO.FITS(name, "r") do f
             wavelength = read(f[2], "WAVELENGTH") .* u"angstrom"
             flux = read(f[2], "FLUX") .* u"erg/s/cm^2/angstrom"
-            Vega(wavelength, flux, name)
+            Vega(wavelength, flux, basename(name))
         end
     end
 
