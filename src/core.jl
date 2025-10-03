@@ -67,7 +67,7 @@ When passed to methods such as [`zeropoint_flux`](@ref), indicates that you wish
 to have the AB zeropoint flux returned.
 """
 struct AB <: MagnitudeSystem end
-Base.show(io::IO, ::AB) = println(io, "AB magnitude system.")
+Base.show(io::IO, ::AB) = print(io, "AB magnitude system.")
 """
     ST() <: MagnitudeSystem
 Singleton struct representing the ST magnitude system. This system is defined so that a source
@@ -81,7 +81,7 @@ When passed to methods such as [`zeropoint_flux`](@ref), indicates that you wish
 to have the ST zeropoint flux returned.
 """
 struct ST <: MagnitudeSystem end
-Base.show(io::IO, ::ST) = println(io, "ST magnitude system.")
+Base.show(io::IO, ::ST) = print(io, "ST magnitude system.")
 
 """
     AbstractFilter{T}
