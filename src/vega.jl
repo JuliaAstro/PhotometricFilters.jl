@@ -68,4 +68,4 @@ function get_calspec_names()
 
     return calspec_names
 end
-get_calspec_names(f::AbstractString) = filter(x -> occursin(f, x), get_calspec_names())
+get_calspec_names(f::AbstractString) = filter!(Base.Fix1(occursin, f), get_calspec_names())
