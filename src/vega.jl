@@ -34,6 +34,8 @@ Returns a list of the names of the available spectral standards that can be down
 
 If the optional `substring::AbstractString` argument is provided, then the list of names is filtered to only include those that contain the provided substring.
 
+This method is not currently exported.
+
 ```jldoctest
 julia> using PhotometricFilters: Vega, get_calspec_names
 
