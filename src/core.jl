@@ -67,7 +67,7 @@ When passed to methods such as [`zeropoint_flux`](@ref), indicates that you wish
 to have the AB zeropoint flux returned.
 """
 struct AB <: MagnitudeSystem end
-Base.show(io::IO, ::AB) = println(io, "AB magnitude system.")
+Base.show(io::IO, ::AB) = print(io, "AB magnitude system.")
 """
     ST() <: MagnitudeSystem
 Singleton struct representing the ST magnitude system. This system is defined so that a source
@@ -81,7 +81,7 @@ When passed to methods such as [`zeropoint_flux`](@ref), indicates that you wish
 to have the ST zeropoint flux returned.
 """
 struct ST <: MagnitudeSystem end
-Base.show(io::IO, ::ST) = println(io, "ST magnitude system.")
+Base.show(io::IO, ::ST) = print(io, "ST magnitude system.")
 
 """
     AbstractFilter{T}
@@ -425,7 +425,7 @@ julia> using PhotometricFilters: mean_flux_density, HST_WFC3_F110W, Vega
 
 julia> using Unitful, UnitfulAstro
 
-julia> v = Vega();
+julia> v = Vega("alpha_lyr_stis_006");
 
 julia> mfd = mean_flux_density(HST_WFC3_F110W(), v.wave, v.flux);
 
@@ -492,7 +492,7 @@ true
 julia> isapprox(zeropoint_Jy(HST_WFC3_F110W(), ST()), 16155.46954* u"Jy"; rtol=1e-3)
 true
 
-julia> isapprox(zeropoint_Jy(HST_WFC3_F110W(), Vega()), 1816.43597 * u"Jy"; rtol=1e-3)
+julia> isapprox(zeropoint_Jy(HST_WFC3_F110W(), Vega("alpha_lyr_stis_006")), 1816.43597 * u"Jy"; rtol=1e-3)
 true
 ```
 """
@@ -515,7 +515,7 @@ true
 julia> isapprox(zeropoint_flux(HST_WFC3_F110W(), ST()), 3.6307805e-9 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
 true
 
-julia> isapprox(zeropoint_flux(HST_WFC3_F110W(), Vega()), 4.082289e-10 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
+julia> isapprox(zeropoint_flux(HST_WFC3_F110W(), Vega("alpha_lyr_stis_006")), 4.082289e-10 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
 true
 ```
 """
@@ -542,7 +542,7 @@ true
 julia> isapprox(float(zeropoint_mag(HST_WFC3_F110W(), ST())), 21.1; rtol=1e-3)
 true
 
-julia> isapprox(zeropoint_mag(HST_WFC3_F110W(), Vega()), 23.4727487; rtol=1e-3)
+julia> isapprox(zeropoint_mag(HST_WFC3_F110W(), Vega("alpha_lyr_stis_006")), 23.4727487; rtol=1e-3)
 true
 ```
 """
@@ -557,7 +557,7 @@ Calculates the magnitude in the given filter `f` in the magnitude system `T` fro
 ```jldoctest
 julia> using PhotometricFilters: magnitude, Vega, ST, AB, HST_WFC3_F110W
 
-julia> v = Vega();
+julia> v = Vega("alpha_lyr_stis_006");
 
 julia> isapprox(magnitude(HST_WFC3_F110W(), AB(), v.wave, v.flux), 0.7519497; rtol=1e-3)
 true
@@ -602,7 +602,7 @@ julia> f = PhotometricFilter(1000:2000, vcat(fill(0.25, 250), fill(0.5, 500), fi
  reference wave.: 1478.1028279485677 Å
  min. wave.: 1000 Å
  max. wave.: 2000 Å
- effective wave.: 1603.6927025575474 Å
+ effective wave.: 1602.7669435459648 Å
  mean wave.: 1499.8333333333333 Å
  central wave.: 1499.5 Å
  pivot wave.: 1478.1028279485677 Å

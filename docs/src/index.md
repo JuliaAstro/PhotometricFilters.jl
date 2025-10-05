@@ -78,6 +78,18 @@ ST
 Vega
 ```
 
+Any reference spectrum hosted by [CALSPEC](https://ssb.stsci.edu/cdbs/calspec/) can be used to construct an instance of [`Vega`](@ref) using the method below.
+
+```@docs
+Vega(::String)
+```
+
+The list of available spectral standards can be retrieved with [`PhotometricFilters.get_calspec_names`](@ref).
+
+```@docs
+PhotometricFilters.get_calspec_names
+```
+
 Zeropoints can be computed with methods below.
 
 ```@docs
