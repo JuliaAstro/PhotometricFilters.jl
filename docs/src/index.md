@@ -49,6 +49,12 @@ get_filter
 PhotometricFilters.SVOFilter
 ```
 
+After you first access a filter with [`get_filter`](@ref), it is cached to disk for future use. To update the cached filters, you can use [`PhotometricFilters.update_filters`](@ref). This function is not exported as it is expected you should not have to run this often. This function will redownload all the filters in the cache from SVO, guaranteeing you have the most up-to-date data.
+
+```@docs
+PhotometricFilters.update_filters
+```
+
 If you'd like to perform a search on the filters available through the SVO filter service, you can use [`query_filters`](@ref).
 
 ```@docs

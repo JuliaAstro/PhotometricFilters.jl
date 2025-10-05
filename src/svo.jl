@@ -91,24 +91,39 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
         throw(ArgumentError("Valid `magsys` arguments to `get_filter` are `:Vega, :AB, :ST`, you provided $magsys."))
     end
     filtername = String(filtername)
-    response = HTTP.get(svo_url; query = Dict("PhotCalID" => "$filtername/$magsys"))
-    if response.status != 200 # If status is not normal,
-        @info "HTTP request to SVO returned with status code $(response.status)."
+
+    filename = joinpath(filter_cache, replace(filtername, "/" => "_") * "_" * string(magsys) * ".txt")
+    # If file doesn't exist in cache, acquire
+    if !isfile(filename)
+        response = HTTP.get(svo_url; query = Dict("PhotCalID" => "$filtername/$magsys"))
+
+        if response.status != 200 # If status is not normal,
+            @info "HTTP request to SVO returned with status code $(response.status)."
+        end
+        
+        # Parse metadata and validate response before caching
+        xml = read(IOBuffer(response.body), Node)
+        info_resource = children(children(xml)[2])
+        info = info_resource[1]
+
+        if attributes(info)["value"] == "ERROR"
+            errval = simple_value(children(info)[1])
+            if errval == "Filter not found:"
+                errval *= " $filtername"
+            end
+            error(errval)
+        end
+
+        open(filename, "w") do io
+            write(io, String(response.body))
+        end
     end
-    
+    file = read(filename, String)
+
     # Parse metadata
-    xml = read(IOBuffer(response.body), Node)
+    xml = read(IOBuffer(file), Node)
     info_resource = children(children(xml)[2])
     info = info_resource[1]
-
-    if attributes(info)["value"] == "ERROR"
-        errval = simple_value(children(info)[1])
-        if errval == "Filter not found:"
-            errval *= " $id"
-        end
-        error(errval)
-    end
-
     resource = info_resource[2]
     param_nodes = children(children(resource)[1])
     d = OrderedDict{String,Any}()
@@ -125,12 +140,37 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
     end
 
     # Construct PhotometricFilter
-    table = VOTables.read(IOBuffer(response.body); unitful=true)
+    table = VOTables.read(IOBuffer(file); unitful=true)
     result = PhotometricFilter(table.Wavelength,
                                Vector(table.Transmission);
                                detector=detector_types[parse(Int, d["DetectorType"]) + 1],
                                filtername=filtername)
     return SVOFilter(result, d)
+end
+
+"""
+    update_filters()
+Updates the SVO filters in the filter cache located at `PhotometricFilters.filter_cache`. 
+"""
+function update_filters()
+    files = filter(isfile, readdir(filter_cache; join=true))
+    for f in files
+        # Recover SVO filter name and magnitude system from file name
+        fbase = basename(f)
+        parts = split(fbase, "_")
+        filtername = join(parts[1:end-1], "/")
+        magsys = Symbol(splitext(parts[end])[1])
+        # @info "Updating filter $filtername"
+        # Move existing file to backup so we can restore in case of failure
+        backup = mv(f, f*".bak")
+        try
+            get_filter(filtername, magsys)
+            rm(backup)
+        catch e
+            mv(backup, f; force=true)
+            @warn "Failed to update filter $f" exception=(e, catch_backtrace())
+        end
+    end
 end
 
 """
