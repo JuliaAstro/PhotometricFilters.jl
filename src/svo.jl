@@ -99,26 +99,30 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
         if response.status != 200 # If status is not normal,
             @info "HTTP request to SVO returned with status code $(response.status)."
         else
+            # Parse metadata and validate response before caching
+            xml = read(IOBuffer(response.body), Node)
+            info_resource = children(children(xml)[2])
+            info = info_resource[1]
+
+            if attributes(info)["value"] == "ERROR"
+                errval = simple_value(children(info)[1])
+                if errval == "Filter not found:"
+                    errval *= " $filtername"
+                end
+                error(errval)
+            end
+
             open(filename, "w") do io
                 write(io, String(response.body))
             end
         end
     end
-    file = open(filename, "r")
+    file = read(filename, String)
 
     # Parse metadata
-    xml = read(file, Node)
+    xml = read(IOBuffer(file), Node)
     info_resource = children(children(xml)[2])
     info = info_resource[1]
-
-    if attributes(info)["value"] == "ERROR"
-        errval = simple_value(children(info)[1])
-        if errval == "Filter not found:"
-            errval *= " $id"
-        end
-        error(errval)
-    end
-
     resource = info_resource[2]
     param_nodes = children(children(resource)[1])
     d = OrderedDict{String,Any}()
@@ -135,7 +139,7 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
     end
 
     # Construct PhotometricFilter
-    table = VOTables.read(file; unitful=true)
+    table = VOTables.read(IOBuffer(file); unitful=true)
     result = PhotometricFilter(table.Wavelength,
                                Vector(table.Transmission);
                                detector=detector_types[parse(Int, d["DetectorType"]) + 1],
