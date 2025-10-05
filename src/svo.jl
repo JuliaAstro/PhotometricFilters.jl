@@ -91,13 +91,23 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
         throw(ArgumentError("Valid `magsys` arguments to `get_filter` are `:Vega, :AB, :ST`, you provided $magsys."))
     end
     filtername = String(filtername)
-    response = HTTP.get(svo_url; query = Dict("PhotCalID" => "$filtername/$magsys"))
-    if response.status != 200 # If status is not normal,
-        @info "HTTP request to SVO returned with status code $(response.status)."
+
+    filename = joinpath(filter_cache, replace(filtername, "/" => "_")*"_"*string(magsys)*".txt")
+    # If file doesn't exist in cache, acquire
+    if !isfile(filename)
+        response = HTTP.get(svo_url; query = Dict("PhotCalID" => "$filtername/$magsys"))
+        if response.status != 200 # If status is not normal,
+            @info "HTTP request to SVO returned with status code $(response.status)."
+        else
+            open(filename, "w") do io
+                write(io, String(response.body))
+            end
+        end
     end
-    
+    file = open(filename, "r")
+
     # Parse metadata
-    xml = read(IOBuffer(response.body), Node)
+    xml = read(file, Node)
     info_resource = children(children(xml)[2])
     info = info_resource[1]
 
@@ -125,7 +135,7 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
     end
 
     # Construct PhotometricFilter
-    table = VOTables.read(IOBuffer(response.body); unitful=true)
+    table = VOTables.read(file; unitful=true)
     result = PhotometricFilter(table.Wavelength,
                                Vector(table.Transmission);
                                detector=detector_types[parse(Int, d["DetectorType"]) + 1],
