@@ -92,7 +92,7 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
     end
     filtername = String(filtername)
 
-    filename = joinpath(filter_cache, replace(filtername, "/" => "_") * "_" * string(magsys) * ".txt")
+    filename = joinpath(filter_cache, replace(filtername, "/" => "_") * "_" * string(magsys) * ".xml")
     # If file doesn't exist in cache, acquire
     if !isfile(filename)
         response = HTTP.get(svo_url; query = Dict("PhotCalID" => "$filtername/$magsys"))
@@ -150,7 +150,7 @@ end
 
 """
     update_filters()
-Updates the SVO filters in the filter cache located at `PhotometricFilters.filter_cache`. 
+Updates the SVO filters in the filter cache located at `PhotometricFilters.filter_cache`. Not exported.
 """
 function update_filters()
     files = filter(isfile, readdir(filter_cache; join=true))
@@ -169,6 +169,21 @@ function update_filters()
         catch e
             mv(backup, f; force=true)
             @warn "Failed to update filter $f" exception=(e, catch_backtrace())
+        end
+    end
+end
+
+"""
+    clear_filters()
+Removes the SVO filters in the filter cache located at `PhotometricFilters.filter_cache`. Not exported.
+"""
+function clear_filters()
+    files = filter(isfile, readdir(filter_cache; join=true))
+    for f in files
+        try
+            rm(f)
+        catch e
+            @warn "Failed to remove filter $f" exception=(e, catch_backtrace())
         end
     end
 end
