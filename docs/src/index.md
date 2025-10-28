@@ -49,17 +49,22 @@ get_filter
 PhotometricFilters.SVOFilter
 ```
 
-After you first access a filter with [`get_filter`](@ref), it is cached to disk for future use. To update the cached filters, you can use [`PhotometricFilters.update_filters`](@ref). This function is not exported as it is expected you should not have to run this often. This function will redownload all the filters in the cache from SVO, guaranteeing you have the most up-to-date data. You can delete cached filters with the non-exported function [`PhotometricFilters.clear_filters`](@ref).
-
-```@docs
-PhotometricFilters.update_filters
-PhotometricFilters.clear_filters
-```
-
 If you'd like to perform a search on the filters available through the SVO filter service, you can use [`query_filters`](@ref).
 
 ```@docs
 query_filters
+```
+
+### Interacting with the Filter Cache
+
+After you first access a filter with [`get_filter`](@ref), it is cached to disk for future use. It is expected that users should not typically have to manually interact with the cache. As such, the cache-related utilities discussed here are not exported from the package and must be explicitly imported (e.g., `using PhotometricFilters: update_filters; update_filters()`) or used via the qualified syntax (e.g., `using PhotometricFilters; PhotometricFilters.update_filters()`).
+
+You can list the currently cached filters with [`PhotometricFilters.cached_filters`](@ref). To update cached filters, ensuring you have the most up-to-date data, you can use [`PhotometricFilters.update_filter`](@ref). You can delete filters from the cache with [`PhotometricFilters.clear_filter`](@ref).
+
+```@docs
+PhotometricFilters.cached_filters
+PhotometricFilters.update_filter
+PhotometricFilters.clear_filter
 ```
 
 We include functions for performing many common operations on photometric filters, summarized below.
