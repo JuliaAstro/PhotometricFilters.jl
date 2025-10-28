@@ -167,14 +167,15 @@ end
 
 """
     update_filter(f::AbstractString, magsys::Symbol)
-Reacquires filter with SVO identifier `f` in the magnitude system `magsys` from SVO and saves it into the cache.
+Reacquires filter with SVO identifier `f` in the magnitude system `magsys` from SVO and saves it into the cache. Returns the updated filter.
 
 ```jldoctest
-julia> using PhotometricFilters: cached_filters, update_filter
+julia> using PhotometricFilters: cached_filters, update_filter, SVOFilter
 
 julia> get_filter("2MASS/2MASS.J", :Vega); # Load SVO filter, will be cached if not already
 
-julia> update_filter("2MASS/2MASS.J", :Vega) # Reacquires filter from SVO and overwrites cached file
+julia> update_filter("2MASS/2MASS.J", :Vega) isa SVOFilter # Updates cached file, returns filter
+true
 ```
 """
 function update_filter(f::AbstractString, magsys::Symbol)
@@ -185,16 +186,18 @@ function update_filter(f::AbstractString, magsys::Symbol)
 
     backup = mv(filename, filename * ".bak")
     try
-        get_filter(f, magsys)
+        r = get_filter(f, magsys)
         rm(backup)
+        return r
     catch e
         mv(backup, f; force=true)
         @warn "Failed to update filter $filename" exception=(e, catch_backtrace())
+        return get_filter(f, magsys)
     end
 end
 """
     update_filter()
-When called with no arguments, updates all filters in the cache.
+When called with no arguments, updates all filters in the cache. Returns `nothing`.
 """
 update_filter() = foreach(x -> update_filter(x...), cached_filters())
 
