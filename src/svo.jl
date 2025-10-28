@@ -176,9 +176,6 @@ julia> get_filter("2MASS/2MASS.J", :Vega); # Load SVO filter, will be cached if 
 
 julia> update_filter("2MASS/2MASS.J", :Vega) # Reacquires filter from SVO and overwrites cached file
 ```
-
-    update_filter()
-When called with no arguments, updates all filters in the cache.
 """
 function update_filter(f::AbstractString, magsys::Symbol)
     filename = joinpath(filter_cache, replace(f, "/" => "_") * "_" * string(magsys) * ".xml")
@@ -195,6 +192,10 @@ function update_filter(f::AbstractString, magsys::Symbol)
         @warn "Failed to update filter $filename" exception=(e, catch_backtrace())
     end
 end
+"""
+    update_filter()
+When called with no arguments, updates all filters in the cache.
+"""
 update_filter() = foreach(x -> update_filter(x...), cached_filters())
 
 """
@@ -211,9 +212,6 @@ julia> clear_filter("2MASS/2MASS.J", :Vega) # Remove filter from cache
 julia> ("2MASS/2MASS.J", :Vega) in cached_filters() # Check that filter was removed from cache
 false
 ```
-
-    clear_filter()
-When called with no arguments, deletes all filters from the cache.
 """
 function clear_filter(f::AbstractString, magsys::Symbol)
     filename = joinpath(filter_cache, replace(f, "/" => "_") * "_" * string(magsys) * ".xml")
@@ -223,6 +221,10 @@ function clear_filter(f::AbstractString, magsys::Symbol)
         @warn "Failed to remove filter $filename" exception=(e, catch_backtrace())
     end
 end
+"""
+    clear_filter()
+When called with no arguments, deletes all filters from the cache.
+"""
 clear_filter() = foreach(x -> clear_filter(x...), cached_filters())
 
 """
