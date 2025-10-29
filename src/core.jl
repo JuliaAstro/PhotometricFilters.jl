@@ -1,10 +1,10 @@
 using Interpolations: linear_interpolation, deduplicate_knots!
 using Trapz: trapz
-using Unitful
-using UnitfulAstro
+using Unitful: Unitful, @derived_dimension, @u_str, NoUnits, Quantity, dimension, uconvert, uparse, ustrip
+import UnitfulAstro
 
 """Default unit for wavelengths."""
-const wave_unit = Unitful.angstrom
+const wave_unit = u"angstrom"
 
 # Dispatch methods for AbstractFilter constructors
 _convert_wave(w) = w * wave_unit
