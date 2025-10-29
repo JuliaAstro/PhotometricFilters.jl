@@ -9,7 +9,7 @@
 
 ## Installation
 
-This package is not yet registered. Ovne can install the most recent version from GitHub using 
+This package is not yet registered. One can install the most recent version from GitHub using 
 
 ```julia
 import Pkg
@@ -44,11 +44,8 @@ svo_filter = get_filter("Roman/WFI.F146")
 Using [Unitful.jl](https://github.com/painterqubits/Unitful.jl) is built in to all functionality
 
 ```julia
-
 julia> filt = SDSS_u();
 
 julia> pivot_wavelength(filt)
 3556.523969910118 Å
 ```
-
-## Citations
