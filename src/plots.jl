@@ -1,6 +1,6 @@
 using RecipesBase
 
-@recipe function f(filt::PhotometricFilter)
+@recipe function f(filt::AbstractFilter)
     label --> filtername(filt)
     yguide --> "throughput"
     xguide --> "wavelength"
@@ -8,7 +8,7 @@ using RecipesBase
     wavelength(filt), throughput(filt)
 end
 
-@recipe function f(filts::Vector{<:PhotometricFilter})
+@recipe function f(filts::Vector{<:AbstractFilter})
     yguide --> "throughput"
     xguide --> "wavelength"
 

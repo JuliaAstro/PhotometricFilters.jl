@@ -55,6 +55,18 @@ If you'd like to perform a search on the filters available through the SVO filte
 query_filters
 ```
 
+### Interacting with the Filter Cache
+
+After you first access a filter with [`get_filter`](@ref), it is cached to disk for future use. It is expected that users should not typically have to manually interact with the cache. As such, the cache-related utilities discussed here are not exported from the package and must be explicitly imported (e.g., `using PhotometricFilters: update_filters; update_filters()`) or used via the qualified syntax (e.g., `using PhotometricFilters; PhotometricFilters.update_filters()`).
+
+You can list the currently cached filters with [`PhotometricFilters.cached_filters`](@ref). To update cached filters, ensuring you have the most up-to-date data, you can use [`PhotometricFilters.update_filter`](@ref). You can delete filters from the cache with [`PhotometricFilters.clear_filter`](@ref).
+
+```@docs
+PhotometricFilters.cached_filters
+PhotometricFilters.update_filter
+PhotometricFilters.clear_filter
+```
+
 We include functions for performing many common operations on photometric filters, summarized below.
 
 ## Applying Filter Curves to Spectra
