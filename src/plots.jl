@@ -1,4 +1,4 @@
-using RecipesBase
+using RecipesBase: @recipe, @series
 
 @recipe function f(filt::AbstractFilter)
     label --> filtername(filt)
