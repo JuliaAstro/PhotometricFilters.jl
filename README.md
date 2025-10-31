@@ -9,11 +9,11 @@
 
 ## Installation
 
-This package is not yet registered. One can install the most recent version from GitHub using 
+This package is registered to the Julia general registry and can be installed by running
 
 ```julia
 import Pkg
-Pkg.add(url="https://github.com/JuliaAstro/PhotometricFilters.jl.git")
+Pkg.add("PhotometricFilters"")
 ```
 
 ## Usage
