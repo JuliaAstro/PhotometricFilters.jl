@@ -13,7 +13,7 @@ This package is registered to the Julia general registry and can be installed by
 
 ```julia
 import Pkg
-Pkg.add("PhotometricFilters"")
+Pkg.add("PhotometricFilters")
 ```
 
 ## Usage
