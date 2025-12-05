@@ -571,8 +571,20 @@ true
 """
 function magnitude(f::AbstractFilter, T::MagnitudeSystem, wavelengths, flux)
     fbar = ustrip(u"erg/s/cm^2/angstrom", mean_flux_density(f, wavelengths, F_lambda.(flux, Ref(f))))
-    return -25//10 * log10(fbar) - zeropoint_mag(f, T)
+    return magnitude(fbar, zeropoint_mag(f, T))
 end
+"""
+    magnitude(fbar, zeropoint)
+Calculates a magnitude from a mean flux density `fbar` (a plain number, in units of erg / s / cm^2 / Angstrom; see [`mean_flux_density`](@ref)) and a magnitude zeropoint `zeropoint` (see [`zeropoint_mag`](@ref)).
+
+```jldoctest
+julia> using PhotometricFilters: magnitude
+
+julia> magnitude(1e-10, 22.0) == -2.5 * log10(1e-10) - 22.0
+true
+```
+"""
+magnitude(fbar, zeropoint) = -25//10 * log10(fbar) - zeropoint
 
 ############################################################
 # Definition and methods for PhotometricFilter concrete type
