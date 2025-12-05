@@ -434,15 +434,36 @@ true
 ```
 """
 function mean_flux_density(wavelengths, flux, throughput, ::Energy)
-    return trapz(wavelengths, flux .* throughput) / trapz(wavelengths, throughput)
+    @assert axes(wavelengths) == axes(flux) == axes(throughput)
+    # Manual trapezoidal integration to avoid allocations
+    num, denom = zero(first(flux)) * zero(first(wavelengths)^2), zero(first(wavelengths))^2
+    for i in eachindex(wavelengths)[begin+1:end]
+        dx = wavelengths[i] - wavelengths[i-1]
+        avg_throughput = (throughput[i] + throughput[i-1]) / 2
+        avg_flux = (flux[i] + flux[i-1]) / 2
+        num += avg_flux * avg_throughput * dx
+        denom += avg_throughput * dx
+    end
+    return num / denom
 end
 function mean_flux_density(wavelengths, flux, throughput, ::Photon)
-    t1 = wavelengths .* throughput
-    return trapz(wavelengths, flux .* t1) / trapz(wavelengths, t1)
+    @assert axes(wavelengths) == axes(flux) == axes(throughput)
+    # Manual trapezoidal integration to avoid allocations
+    num, denom = zero(first(flux)) * zero(first(wavelengths)^2), zero(first(wavelengths))^2
+    for i in eachindex(wavelengths)[begin+1:end]
+        dx = wavelengths[i] - wavelengths[i-1]
+        avg_throughput = (throughput[i] + throughput[i-1]) / 2
+        avg_flux = (flux[i] + flux[i-1]) / 2
+        avg_wavelength = (wavelengths[i] + wavelengths[i-1]) / 2
+        num += avg_flux * avg_throughput * avg_wavelength * dx
+        denom += avg_throughput * avg_wavelength * dx
+    end
+    return num / denom
 end
 function mean_flux_density(filt::AbstractFilter, wavelengths, flux)
     return mean_flux_density(wavelengths, flux, filt.(wavelengths), detector_type(filt))
 end
+
 @derived_dimension SpectralFluxDensity Unitful.𝐌 / Unitful.𝐋 / Unitful.𝐓^3
 @derived_dimension SpectralEnergyDensity Unitful.𝐌 / Unitful.𝐓^2
 """
