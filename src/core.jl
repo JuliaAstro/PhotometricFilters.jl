@@ -421,15 +421,20 @@ which is essentially just the mean flux weighted by the filter throughput.
 Below we show example usage that can be compared against [this example](https://github.com/mfouesneau/pyphot/blob/master/examples/Sun_Vega.ipynb) from pyphot.
 
 ```jldoctest
-julia> using PhotometricFilters: mean_flux_density, HST_WFC3_F110W, Vega
+julia> using PhotometricFilters: mean_flux_density, HST_WFC3_F110W, GROUND_BESSELL_J, Vega
 
 julia> using Unitful, UnitfulAstro
 
 julia> v = Vega("alpha_lyr_stis_006");
 
-julia> mfd = mean_flux_density(HST_WFC3_F110W(), v.wave, v.flux);
+julia> mfd = mean_flux_density(HST_WFC3_F110W(), v.wave, v.flux); # Try a photon counting filter
 
 julia> isapprox(mfd, 4.082289e-10 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
+true
+
+julia> mfd = mean_flux_density(GROUND_BESSELL_J(), v.wave, v.flux); # Try an energy counting filter
+
+julia> isapprox(mfd, 3.186819881e-10 * u"erg/s/cm^2/angstrom"; rtol=1e-3)
 true
 ```
 """
