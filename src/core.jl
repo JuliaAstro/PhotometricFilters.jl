@@ -436,7 +436,7 @@ true
 function mean_flux_density(wavelengths, flux, throughput, ::Energy)
     @assert axes(wavelengths) == axes(flux) == axes(throughput)
     # Manual trapezoidal integration to avoid allocations
-    num, denom = zero(first(flux)) * zero(first(wavelengths)^2), zero(first(wavelengths))^2
+    num, denom = zero(first(flux)) * zero(first(wavelengths)), zero(first(wavelengths))
     for i in eachindex(wavelengths)[begin+1:end]
         dx = wavelengths[i] - wavelengths[i-1]
         avg_throughput = (throughput[i] + throughput[i-1]) / 2
