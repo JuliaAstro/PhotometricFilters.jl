@@ -9,4 +9,5 @@ doctest(PhotometricFilters)
 @testset verbose=true "PhotometricFilters.jl" begin
     @safetestset "Library" include("library_tests.jl")
     @safetestset "Iteration" include("iteration_tests.jl")
+    @safetestset "SVO tests" include("svo_tests.jl")
 end
