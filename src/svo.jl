@@ -138,10 +138,20 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
         end
     end
 
+    """Parse throughput table, applying any necessary conversions."""
+    function parse_throughput(d, table)
+        filterID = d["filterID"]
+        if occursin("Roman/WFI", filterID)
+            # Roman throughput is given as effective area, convert to throughput
+            return table.Transmission ./ (π * (1.2u"m")^2)
+        end
+        return Vector(table.Transmission)
+    end
+
     # Construct PhotometricFilter
     table = VOTables.read(IOBuffer(file); unitful=true)
     result = PhotometricFilter(table.Wavelength,
-                               Vector(table.Transmission);
+                               parse_throughput(d, table);
                                detector=detector_types[parse(Int, d["DetectorType"]) + 1],
                                filtername=filtername)
     return SVOFilter(result, d)
