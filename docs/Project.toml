@@ -8,3 +8,6 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 DataFrames = "1"
 Documenter = "1"
 Unitful = "1"
+
+[sources]
+PhotometricFilters = {path = ".."}
