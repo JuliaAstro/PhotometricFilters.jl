@@ -6,7 +6,7 @@ import OrderedCollections: OrderedDict
 using XML: Node, LazyNode, children, simple_value, value, attributes, tag, next
 import VOTables
 
-const svo_url = "http://svo2.cab.inta-csic.es/theory/fps/fps.php"
+const svo_url = "https://svo2.cab.inta-csic.es/svo/theory/fps3/fps.php"
 const detector_types = (Energy(), Photon()) # SVO returns 0 or 1 for energy or photon
 const TYPE_VO_TO_JL = VOTables.TYPE_VO_TO_JL
 
@@ -149,7 +149,7 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
     end
 
     # Construct PhotometricFilter
-    table = VOTables.read(IOBuffer(file); unitful=true)
+    table = VOTables.read(IOBuffer(file); unitful=true, quiet=true)
     result = PhotometricFilter(table.Wavelength,
                                parse_throughput(d, table);
                                detector=detector_types[parse(Int, d["DetectorType"]) + 1],
@@ -384,7 +384,7 @@ function query_filters(; kwargs...)
     response = HTTP.get(svo_url; query = query)
 
     err_str = try
-        table = VOTables.read(IOBuffer(response.body))
+        table = VOTables.read(IOBuffer(response.body); quiet=true)
         df = DataFrame(table)
 
         # Add units to fields like ZeroPoint
