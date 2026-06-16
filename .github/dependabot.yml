@@ -9,3 +9,5 @@ updates:
     directories: ["/",  "/bench", "/docs", "/test"]
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: "PhotometricFilters" # Ignore package itself
