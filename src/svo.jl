@@ -3,8 +3,24 @@ import HTTP
 import OrderedCollections: OrderedDict
 # using Unitful: uparse, ustrip, NoUnits
 # import UnitfulAstro
-using XML: Node, LazyNode, children, simple_value, value, attributes, tag, next
+using XML: XML, Node, LazyNode, children, simple_value, value, attributes, tag, nodetype
 import VOTables
+
+# --- XML.jl 0.3/0.4 compatibility helpers ------------------------------------
+# XML.jl ≥ 0.4 preserves inter-element whitespace as Text nodes (so positional
+# child indexing can land on whitespace) and removed document-order iteration
+# of LazyNode (`next`). These helpers make element access explicit; on 0.3
+# parse trees they behave like the previous positional code.
+_child_elements(n) = filter(c -> nodetype(c) === XML.Element, children(n))
+_root_element(doc) = only(_child_elements(doc))
+function _walk_elements(f, n)
+    for c in children(n)
+        nodetype(c) === XML.Element || continue
+        f(c)
+        _walk_elements(f, c)
+    end
+    return nothing
+end
 
 const svo_url = "https://svo2.cab.inta-csic.es/svo/theory/fps3/fps.php"
 const detector_types = (Energy(), Photon()) # SVO returns 0 or 1 for energy or photon
@@ -102,11 +118,11 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
         
         # Parse metadata and validate response before caching
         xml = read(IOBuffer(response.body), Node)
-        info_resource = children(children(xml)[2])
+        info_resource = _child_elements(_root_element(xml))
         info = info_resource[1]
 
         if attributes(info)["value"] == "ERROR"
-            errval = simple_value(children(info)[1])
+            errval = simple_value(_child_elements(info)[1])
             if errval == "Filter not found:"
                 errval *= " $filtername"
             end
@@ -121,10 +137,10 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
 
     # Parse metadata
     xml = read(IOBuffer(file), Node)
-    info_resource = children(children(xml)[2])
+    info_resource = _child_elements(_root_element(xml))
     info = info_resource[1]
     resource = info_resource[2]
-    param_nodes = children(children(resource)[1])
+    param_nodes = _child_elements(_child_elements(resource)[1])
     d = OrderedDict{String,Any}()
 
     for n in param_nodes
@@ -133,8 +149,9 @@ function get_filter(filtername::AbstractString, magsys::Symbol=:Vega)
         key, val = _get_filter_param_node_keyval(n)
         d[key] = val
 
-        if !isempty(children(n))
-            d[key * "?"] = simple_value(children(n)[1])
+        n_els = _child_elements(n)
+        if !isempty(n_els)
+            d[key * "?"] = simple_value(n_els[1])
         end
     end
 
@@ -275,7 +292,7 @@ This is not exported.
 function get_metadata()
     response = HTTP.get(svo_url; query = Dict("FORMAT" => "metadata"))
     xmldoc = read(IOBuffer(response.body), Node)
-    param_nodes = children(children(children(xmldoc)[2])[1])
+    param_nodes = _child_elements(_child_elements(_root_element(xmldoc))[1])
     table = [_get_metadata_param_node_table_row(n) for n in param_nodes if tag(n) == "PARAM" && !endswith(attributes(n)["name"], "_max")]
     return DataFrame(table)
 end
@@ -289,8 +306,9 @@ function _get_metadata_param_node_table_row(n::Node)
     end
     u = _get_unit(att["unit"])
     datatype = TYPE_VO_TO_JL[att["datatype"]]
-    description = simple_value(children(n)[1])
-    values = _get_values(children(n)[2], datatype)
+    n_els = _child_elements(n)
+    description = simple_value(n_els[1])
+    values = _get_values(n_els[2], datatype)
     return (; parameter, unit=u, datatype, description, values)
 end
 
@@ -316,7 +334,7 @@ end
 
 function _get_values(n::Node, T)
     @assert tag(n) == "VALUES"
-    c = children(n)
+    c = _child_elements(n)
     if length(c) == 2 && tag(c[1]) == "MIN"
         return [parse(T, attributes(c[1])["value"]), parse(T, attributes(c[2])["value"])]
     elseif !isempty(c) && tag(c[1]) == "OPTION"
@@ -389,30 +407,28 @@ function query_filters(; kwargs...)
 
         # Add units to fields like ZeroPoint
         n = read(IOBuffer(response.body), LazyNode)
-        # Find fields
-        while tag(n) != "FIELD"
-            n = next(n)
-        end
+        # Find fields (document order)
+        field_nodes = LazyNode[]
+        _walk_elements(c -> tag(c) == "FIELD" && push!(field_nodes, c), _root_element(n))
 
-        while tag(n) == "FIELD"
-            if haskey(attributes(n), "unit")
-                field = attributes(n)["name"]
-                u = _get_unit(attributes(n)["unit"])
+        for field_node in field_nodes
+            if haskey(attributes(field_node), "unit")
+                field = attributes(field_node)["name"]
+                u = _get_unit(attributes(field_node)["unit"])
                 if hasproperty(df, field) && u != NoUnits
                     df[!, field] = df[!, field] .* u
                 end
             end
-            n = next(n)
         end
 
         return df
 
     catch e
         xml = read(IOBuffer(response.body), Node)
-        n = children(children(xml)[2])[1]
+        n = _child_elements(_root_element(xml))[1]
 
         if attributes(n)["value"] == "ERROR"
-            simple_value(children(n)[1])
+            simple_value(_child_elements(n)[1])
         else
             throw(e)
         end

@@ -59,13 +59,15 @@ function get_calspec_names()
 
     calspec_names = String[]
 
-    for node in xml
-        if tag(node) == "a"
-            filename = value(children(node)[1])
-            calspec_name, ext = splitext(filename)
-            ext == ".fits" || continue
-            push!(calspec_names, calspec_name)
-        end
+    # document-order iteration of LazyNode was removed in XML.jl 0.4;
+    # walk the element tree instead (works on both 0.3 and 0.4)
+    _walk_elements(xml) do node
+        tag(node) == "a" || return
+        filename = value(children(node)[1])
+        calspec_name, ext = splitext(filename)
+        ext == ".fits" || return
+        push!(calspec_names, calspec_name)
+        return
     end
 
     return calspec_names
