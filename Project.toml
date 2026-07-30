@@ -20,7 +20,7 @@ VOTables = "3abbdab7-df67-4801-8590-8effec53f469"
 XML = "72c71f33-b9b6-44de-8c94-c961784809e2"
 
 [compat]
-DataDeps = "0.7"
+DataDeps = "0.7, 1.0"
 DataFrames = "1.4"
 Documenter = "1"
 FITSIO = "0.16, 0.17"
